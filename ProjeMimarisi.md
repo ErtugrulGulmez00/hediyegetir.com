@@ -1,0 +1,54 @@
+
+# Plan: `projemimarisi.md` — hediyegetir.com Yol Haritası
+
+## Context
+
+Kullanıcı, hediyelik eşya satan bir işletme için **hediyegetir.com** sitesini başka bir Claude oturumuna yaptıracak. Bu oturumdaki görev kod yazmak değil; o oturumun baştan sona takip edeceği, prompt gibi çalışan, aşama aşama detaylı bir **yol haritası** dosyası (`C:\Users\01mrg\Desktop\projemimari\projemimarisi.md`) üretmek. Klasör şu an boş.
+
+Kullanıcıdan alınan kararlar:
+
+- Hosting: **Vercel + Neon Postgres + Vercel Blob**
+- Hediş: **kural tabanlı puanlama** (LLM yok, yapay zeka hissi metin/animasyonla verilir)
+- Tasarım: **Sıcak & el yapımı** (kraft kağıt, krem/kiremit/zeytin, serif + el yazısı, hediye etiketi/kurdele motifleri)
+
+Eski site keşfi (hediyeyolla.ikas.shop):
+
+- `sitemap.xml` → `products.xml`: şu an **7 ürün** var (el yapımı çanta/süveter/elbise, marka "Begush Butik").
+- Ürün sayfalarında `__NEXT_DATA__` → `props.pageProps.pageSpecificData` içinde tam ürün var: `id, name, description(HTML), categories[].name, tags[] (boş), variants[].prices[0].{sellPrice, discountPrice}, variants[].stock, isActive, images[].{imageId, fileName, isMain, order}`. Yedek kaynak olarak JSON-LD `Product` (name, description, image[], offers.price) ve `BreadcrumbList` var.
+- Görsel URL kalıbı: `https://cdn.myikas.com/images/{storeId}/{imageId}/{boyut}/{fileName}.webp` (storeId sayfadaki CDN URL'lerinden okunabilir).
+- Ürünlerde etiket yok, bu yüzden Hediş eşleştirmesi için "kime uygun / cinsiyet / hobi" etiketleri admin panelinden girilecek (import sırasında anahtar kelimeyle *öneri* etiket atanır, admin onaylar).
+
+## Yapılacak iş
+
+Tek bir dosya yazılacak: `projemimarisi.md` (Türkçe, ~900-1300 satır). Kod yazılmayacak.
+
+## `projemimarisi.md` içeriği (bölüm bölüm)
+
+0. **Bu dosyayı okuyan Claude'a talimatlar**: aşama sırasıyla ilerle, her aşamanın "Bitti sayılır" kriterlerini doğrula, aşama sonunda kullanıcıya kısa rapor ver ve md içindeki ilerleme kutucuklarını işaretle; eksik bilgide (WhatsApp numarası vb.) sor; UI metinleri Türkçe ve "sen" dili.
+1. **Proje özeti**: amaç, kullanıcı akışı (Hediş → 5 öneri → sepet → WhatsApp), kapsam / kapsam dışı (online ödeme, müşteri üyeliği, kargo entegrasyonu yok).
+2. **Teknoloji yığını**: Next.js (App Router, TS, güncel kararlı sürüm; v16+ ise `middleware.ts` yerine `proxy.ts`), Tailwind v4, Prisma + Neon (pooled `DATABASE_URL` + `DIRECT_URL`), Vercel Blob (client upload), Zustand (persist'li sepet), zod, motion (Framer Motion), jose + bcryptjs (admin oturumu), sanitize/html-to-text (import), vitest (+ opsiyonel Playwright). `.env.example` tam listesi.
+3. **Klasör yapısı**: `src/app/(site)/{page(Hediş), magaza, urun/[slug], sepet, kvkk}`, `src/app/admin/{giris, (panel)/{urunler, kategoriler, ikas, ayarlar}}`, `src/app/api/{ziyaret, hedis/oneri, sepet/urunler, admin/upload}`, `src/lib/{db, auth, money, slug, whatsapp, analytics}`, `src/lib/hedis/{config, recommend, messages}`, `src/lib/ikas/{sitemap, parse-product, sync, auto-tag}`, `src/store/cart.ts`, `scripts/{ikas-sync.ts, hash-password.ts}`, `prisma/{schema.prisma, seed.ts}`.
+4. **Veri modeli (Prisma)**: `Product` (slug, name, description düz metin, `priceKurus`, `compareAtPriceKurus?`, `stock?` (null = sipariş üzerine), isActive, isFeatured, categoryId, `recipients String[]`, `gender KADIN|ERKEK|UNISEX`, `hobbies String[]`, `hedisReviewed`, `source IKAS|MANUAL`, `ikasId @unique`, `ikasUrl`, `lockedFields String[]`), `ProductImage` (url, alt, sortOrder, blob mi), `Category`, `Settings` (tek satır: whatsappNumber, mesaj başlığı), `DailyStat` (date, visits, uniqueVisitors, pageViews), `VisitorDay` (date + visitorHash PK), `IkasSyncLog`, `LoginAttempt`.
+5. **Tasarım sistemi ("AI gibi durmayan")**: renk token'ları (krem #F4ECDF, kraft #D9C3A0, mürekkep #2B2420, kiremit #B5523B, zeytin #6B7344, hardal #D9A441, gül kurusu #C98B83), fontlar (Fraunces başlık, Caveat el yazısı vurgu, Karla gövde; `latin-ext` alt kümesiyle Türkçe karakter desteği), dokular (SVG kağıt grain), imza motifler (washi bant köşeli ürün kartı, fiyat için delikli hediye etiketi, el çizimi alt çizgi, kurdele ayırıcı, ±1° eğik kartlar, damga rozet "El yapımı"), **yasak listesi** (mor-mavi gradyan, glassmorphism, ✨ ikonları, Inter, hero + 3 özellik kartı kalıbı, her şeyi ortalamak, lorem ipsum, aşırı shadow-xl/rounded-2xl), mobil öncelikli yerleşim, `prefers-reduced-motion`.
+6. **Sayfalar ve akışlar**:
+   - `/` **Hediş**: maskot (kapağı açılan hediye kutusu SVG, göz kırpma). Mesajlar sohbet balonu yerine bantla tutturulmuş not kağıdı, seçenekler etiket şeklinde chip'ler. Adımlar: karşılama ("Mağazaya geç" linki) → kime (Anne, Baba, Sevgili, Eş, Kız/Erkek kardeş, Arkadaş, Teyze, Hala, Dayı, Amca, Enişte, Yenge, Kuzen, Büyükanne, Büyükbaba, Çocuk, İş arkadaşı, Öğretmen, Diğer) → *cinsiyeti belirsiz kişiler için* kadın/erkek/fark etmez → bütçe (0–500 / 500–1000 / 1000+ ₺; sınırlar ≤500, 500–≤1000, >1000) → hobiler (1–3 seçim + "Emin değilim"; 16 hobi listesi) → "düşünüyor" animasyonu (en az 1.5 sn, dönen cümleler) → "Annene özel 5 hediye" sonuç kartları + "neden" etiketleri + Sepete ekle / Detay / **Diğer ürünlere göz at → `/magaza`** / Baştan başla. Kişi config'inde Türkçe ek çekimleri hazır (`iyelik: "Annen"`, `yonelme: "Annene"`). Dönen ziyaretçiye kısa karşılama (localStorage, try/catch).
+   - `/magaza` (ana ürün listesi): kategori chip'leri, bütçe filtresi, sıralama (searchParams), grid 2/3/4 kolon.
+   - `/urun/[slug]`: galeri, fiyat (+üstü çizili), adet, sepete ekle, "WhatsApp'tan sor" (tek ürün), açıklama, benzer ürünler, JSON-LD.
+   - `/sepet`: adet +/−, sil, ara toplam, "Ödeme ve kargo detaylarını WhatsApp'tan netleştiriyoruz" notu, **WhatsApp ile bilgi al** butonu. Sepet yalnızca `{productId, qty}` tutar; güncel fiyat/ad `/api/sepet/urunler` ile çekilir, pasif ürünler uyarıyla düşer.
+   - **WhatsApp mesaj şablonu** (`lib/whatsapp.ts`): `wa.me/{numara}?text=` + encodeURIComponent; numaralı ürün listesi (ad, adet, birim fiyat, ürün linki) + ara toplam; numara Settings'ten, yedek env'den.
+   - 404 ("Bu paket adrese ulaşamadı"), KVKK/çerez bilgilendirme sayfası.
+7. **Hediş öneri motoru** (`lib/hedis/recommend.ts`, sunucu tarafı, saf fonksiyon + testler): adaylar = aktif ve stokta (veya stok null) ürünler. Puan: kişi eşleşmesi +40, cinsiyet uyumu/unisex +15, cinsiyet uyumsuzluğu −100 (elenir), bütçe bandı içinde +30, komşu banda %20 tolerans +10 ("bütçeni biraz aşıyor" etiketi), her ortak hobi +20, öne çıkan +5. Sıralama: puan, sonra öne çıkan, sonra yeni. Çeşitlilik: mümkünse kategori başına en fazla 2. Her zaman en fazla 5 sonuç; 5'ten az uygun ürün varsa yedek doldurma ve dürüst mesaj. Ağırlıklar `config.ts`'de sabitler. Her sonuç `reasons[]` döner (UI'deki "neden" etiketleri).
+8. **ikas içe aktarma** (`lib/ikas/*` + `npm run ikas:sync` + admin butonu): products.xml → URL listesi → sayfa başına nazik istek (eşzamanlılık 2, 300 ms bekleme) → `__NEXT_DATA__` ayrıştırma (JSON-LD yedek) → fiyat: geçerli ilk varyantın `discountPrice ?? sellPrice` değeri, `compareAt = sellPrice` (0 veya silinmiş varyantlar atlanır; fiyat yoksa pasif + uyarı) → açıklama HTML'den düz metne → görseller 1080 boyutta indirilip Vercel Blob'a yüklenir → `ikasId` ile upsert, `lockedFields` korunur → sitemap'ten kalkan ürün pasife çekilir (silinmez) → kategori upsert (Türkçe slugify) → `auto-tag.ts` anahtar kelime eşlemesiyle öneri etiket atar, `hedisReviewed=false` → `IkasSyncLog` raporu (eklenen/güncellenen/pasife alınan/hatalı). Varyant desteği v1'de yok (en düşük geçerli fiyat kullanılır).
+9. **Admin paneli**: tek admin (env'de kullanıcı adı + bcrypt hash), jose JWT httpOnly cookie, `/admin` ve `/api/admin` koruması, giriş deneme sınırı (DB). Sayfalar: Özet (ziyaret kartları + 30 günlük bar grafik + "X ürünün Hediş etiketleri onaylanmadı" uyarısı), Ürünler (arama, filtre: aktif/pasif/kaynak/etiketsiz, hızlı aktif toggle), Ürün formu (tüm alanlar, çoklu foto yükleme, sürükle-sırala, ana foto, Hediş etiketleri: "kime uygun" checkbox ızgarası + hızlı seç "Tüm kadınlar/Tüm erkekler/Herkes", cinsiyet, hobi chip'leri; elle değiştirilen ikas alanları otomatik `lockedFields`'e eklenir), Kategoriler CRUD, ikas Senkron (buton + son raporlar), Ayarlar (WhatsApp numarası, mesaj başlığı). Kaydetmede `revalidatePath`. Blob: client upload (`handleUpload` route), jpeg/png/webp, en fazla 5 MB, silinen görselin blob'u da silinir.
+10. **Ziyaret logu**: `(site)` layout'ta `<VisitTracker/>` → `navigator.sendBeacon('/api/ziyaret')`. Ziyaret (oturum) = sessionStorage bayrağı yoksa; tekil ziyaretçi = anonim `hg_vid` çerezi (UUID, hash'lenerek saklanır, IP tutulmaz); sayfa görüntüleme = her rota değişimi. Botlar, `/admin` ve admin oturumu hariç. Gün sınırı Europe/Istanbul. Admin özetinde bugün / 7 gün / 30 gün + grafik.
+11. **SEO / erişilebilirlik / performans**: `lang="tr"`, sayfa metadata + OG, `app/sitemap.ts`, `robots.ts` (`/admin` disallow), ürün JSON-LD, `next/image` (`remotePatterns`: Blob alanı), ürün sayfalarında ISR, `Intl.NumberFormat('tr-TR', TRY)`, Türkçe küçük harf (`toLocaleLowerCase('tr-TR')`), aria-live Hediş mesajları, chip'lerde `aria-pressed`, klavye ile tam gezinme.
+12. **Aşama aşama uygulama planı** (her aşamada görevler + "Bitti sayılır" kriterleri + işaretlenecek kutucuklar):
+    0 Kurulum → 1 Veri modeli & seed → 2 ikas içe aktarma (CLI) → 3 Tasarım sistemi & ortak bileşenler → 4 Mağaza & ürün detay → 5 Sepet & WhatsApp → 6 Admin paneli → 7 Hediş (akış + motor + testler) → 8 Ziyaret logu & dashboard → 9 Cilalama (SEO, a11y, boş/hata durumları, mobil) → 10 Yayına alma (Neon, Vercel, Blob, env, `prisma migrate deploy`, ilk senkron, hediyegetir.com DNS, admin ilk etiketleme, smoke test listesi).
+13. **Test planı**: vitest: `recommend` (tam eşleşme, bütçe toleransı, cinsiyet eleme, 5'ten az ürün), `whatsapp` mesaj oluşturucu, `parse-product` (kaydedilmiş HTML fixture ile), slugify, para formatı. Opsiyonel Playwright e2e: Hediş → sepete ekle → WhatsApp linki ürün adını içeriyor.
+14. **Kullanıcıdan alınacak bilgiler**: WhatsApp numarası, logo varsa, Instagram/iletişim bilgileri, admin kullanıcı adı ve şifresi, Neon/Vercel hesapları, domain DNS erişimi.
+15. **Kapsam dışı / sonraki adımlar**: online ödeme, varyant seçimi, WhatsApp tıklama istatistiği, Claude ile "neden bu hediye" cümleleri, günlük otomatik ikas senkronu (Vercel Cron).
+
+## Doğrulama
+
+- Dosya oluşturulduktan sonra okunup kontrol edilir: 15 bölümün hepsi var mı, aşamaların "Bitti sayılır" kriterleri var mı, kullanıcının istediği her özellik (Hediş akışı ve 3 bütçe aralığı, 5 ürün önerisi, "diğer ürünlere göz at" → ana sayfa, sepet → WhatsApp, admin foto/bilgi girişi, ziyaret logu, ikas'tan veri çekme, hediyegetir.com, özgün tasarım) en az bir aşamaya bağlanmış mı.
+- ikas veri yolları (`__NEXT_DATA__` alan adları, CDN URL kalıbı) bu oturumda canlı sayfadan doğrulandı; md'ye "uygulamada önce bir fixture kaydet ve parser'ı ona karşı test et" notu eklenecek.
