@@ -19,6 +19,34 @@ type CartState = {
   clear: () => void;
 };
 
+// Gizli pencere / engellenmiş depolamada sessizce bellek içinde çalışır.
+// useCart'tan önce tanımlı olmalı: createJSONStorage depolamayı hemen okur; burada
+// tanımsız kalırsa persist sessizce devre dışı kalır ve useCart.persist undefined olur.
+const memory = new Map<string, string>();
+const safeLocalStorage = {
+  getItem: (k: string) => {
+    try {
+      return localStorage.getItem(k);
+    } catch {
+      return memory.get(k) ?? null;
+    }
+  },
+  setItem: (k: string, v: string) => {
+    try {
+      localStorage.setItem(k, v);
+    } catch {
+      memory.set(k, v);
+    }
+  },
+  removeItem: (k: string) => {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      memory.delete(k);
+    }
+  },
+};
+
 const clamp = (n: number) => Math.max(1, Math.min(MAX_QTY, Math.floor(n)));
 
 export const useCart = create<CartState>()(
@@ -48,32 +76,6 @@ export const useCart = create<CartState>()(
     },
   ),
 );
-
-// Gizli pencere / engellenmiş depolamada sessizce bellek içinde çalışır
-const memory = new Map<string, string>();
-const safeLocalStorage = {
-  getItem: (k: string) => {
-    try {
-      return localStorage.getItem(k);
-    } catch {
-      return memory.get(k) ?? null;
-    }
-  },
-  setItem: (k: string, v: string) => {
-    try {
-      localStorage.setItem(k, v);
-    } catch {
-      memory.set(k, v);
-    }
-  },
-  removeItem: (k: string) => {
-    try {
-      localStorage.removeItem(k);
-    } catch {
-      memory.delete(k);
-    }
-  },
-};
 
 const subscribeHydration = (cb: () => void) => useCart.persist.onFinishHydration(cb);
 
