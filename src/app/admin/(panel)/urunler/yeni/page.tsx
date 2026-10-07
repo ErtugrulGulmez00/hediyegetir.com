@@ -40,6 +40,7 @@ export default async function NewProductPage() {
         }}
         categories={categories}
         blobEnabled={!!process.env.BLOB_READ_WRITE_TOKEN}
+        aiEnabled={!!process.env.OPENROUTER_API_KEY}
       />
     </>
   );

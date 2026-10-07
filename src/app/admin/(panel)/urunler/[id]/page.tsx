@@ -52,6 +52,7 @@ export default async function EditProductPage(props: PageProps<"/admin/urunler/[
         initial={initial}
         categories={categories}
         blobEnabled={!!process.env.BLOB_READ_WRITE_TOKEN}
+        aiEnabled={!!process.env.OPENROUTER_API_KEY}
       />
     </>
   );

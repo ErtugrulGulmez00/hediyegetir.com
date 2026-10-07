@@ -72,6 +72,8 @@ model Settings {
   whatsappNumber   String   @default("")
   whatsappGreeting String   @default("Merhaba! hediyegetir.com üzerinden şu ürünlerle ilgileniyorum:")
   instagramUrl     String   @default("")
+  // Ürün fotoğrafından öneri üreten OpenRouter modeli (görüntü destekli olmalı)
+  aiModel          String   @default("dots-studio/dots-3-note-preview:free")
   updatedAt        DateTime @updatedAt
 }
 

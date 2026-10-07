@@ -2,10 +2,12 @@
 
 import { upload } from "@vercel/blob/client";
 import Image from "next/image";
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import type { AiOneriResponse } from "@/app/api/admin/ai-oneri/route";
 import { TagChip } from "@/components/ui/TagChip";
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGES_PER_PRODUCT } from "@/lib/admin/images";
 import type { ProductFormInput } from "@/lib/admin/product-input";
+import { mergeSuggestion } from "@/lib/ai/merge";
 import { HOBBIES, RECIPIENTS, type GenderKey } from "@/lib/hedis/config";
 import { slugify } from "@/lib/slug";
 import { deleteProductAction, saveProductAction, type ProductFormState } from "../../actions";
@@ -38,16 +40,28 @@ export function ProductForm({
   initial,
   categories,
   blobEnabled,
+  aiEnabled,
 }: {
   initial: ProductFormInitial;
   categories: { id: string; name: string }[];
   blobEnabled: boolean;
+  /** OpenRouter anahtarı tanımlıysa fotoğraftan öneri özelliği açılır */
+  aiEnabled: boolean;
 }) {
   const [v, setV] = useState(initial);
   const [images, setImages] = useState<ImgItem[]>(() => initial.images.map((i) => ({ ...i, key: nextKey() })));
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragKey, setDragKey] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [ai, setAi] = useState<{ status: "idle" | "running" | "done" | "error"; message?: string }>({ status: "idle" });
+  const aiAutoRan = useRef(false);
+  // Öneri gelene kadar admin yazmaya devam edebilir; birleştirmede en güncel form kullanılır
+  const latest = useRef(v);
+  const latestImages = useRef(images);
+  useEffect(() => {
+    latest.current = v;
+    latestImages.current = images;
+  }, [v, images]);
 
   const [state, formAction, pending] = useActionState<ProductFormState, FormData>(
     saveProductAction.bind(null, initial.id),
@@ -74,9 +88,41 @@ export function ProductForm({
     images: images.filter((i) => !i.uploading).map(({ id, url, alt, isBlob }) => ({ id, url, alt, isBlob })),
   };
 
+  async function runAi(imageUrl: string) {
+    setAi({ status: "running" });
+    try {
+      const res = await fetch("/api/admin/ai-oneri", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ imageUrl }),
+      });
+      const data = (await res.json().catch(() => ({ error: `HTTP ${res.status}` }))) as AiOneriResponse;
+      if ("error" in data) return setAi({ status: "error", message: data.error });
+
+      const s = data.suggestion;
+      const nameBefore = latest.current.name;
+      const { next, filled } = mergeSuggestion(latest.current, s);
+      setV(next);
+      // Fotoğraf açıklaması boşsa ya da yalnızca ürün adıysa öneriyle değiştir
+      const target = latestImages.current.find((img) => img.url === imageUrl);
+      if (s.alt && target && (!target.alt.trim() || target.alt === nameBefore)) {
+        setImages((list) => list.map((img) => (img.url === imageUrl ? { ...img, alt: s.alt! } : img)));
+        filled.push("fotoğraf açıklaması");
+      }
+      const parts = [filled.length ? `Doldurdum: ${filled.join(", ")}.` : "Boş alan yoktu, hiçbir şeyi değiştirmedim."];
+      if (s.newCategoryName && !next.categoryId) parts.push(`Önerilen kategori "${s.newCategoryName}" henüz yok; istersen Kategoriler'den ekleyebilirsin.`);
+      if (filled.includes("Hediş etiketleri")) parts.push("Etiketleri kontrol edip kutuyu işaretlemeyi unutma.");
+      setAi({ status: "done", message: parts.join(" ") });
+    } catch {
+      setAi({ status: "error", message: "Öneri alınamadı, bağlantını kontrol et." });
+    }
+  }
+
   async function handleFiles(files: FileList | null) {
     if (!files) return;
     setUploadError(null);
+    // Ürünün ilk fotoğrafı yüklenince bir kez otomatik öneri al
+    const autoAi = aiEnabled && !aiAutoRan.current && images.length === 0;
     const room = MAX_IMAGES_PER_PRODUCT - images.length;
     const list = Array.from(files).slice(0, Math.max(0, room));
     if (files.length > list.length) setUploadError(`En fazla ${MAX_IMAGES_PER_PRODUCT} fotoğraf eklenebilir.`);
@@ -96,6 +142,10 @@ export function ProductForm({
       try {
         const url = await uploadOne(file, v.name || "urun", blobEnabled);
         setImages((s) => s.map((i) => (i.key === key ? { ...i, url, uploading: false } : i)));
+        if (autoAi && !aiAutoRan.current) {
+          aiAutoRan.current = true;
+          void runAi(url);
+        }
       } catch (e) {
         setImages((s) => s.filter((i) => i.key !== key));
         setUploadError(`${file.name}: yüklenemedi (${e instanceof Error ? e.message : "bilinmeyen hata"}).`);
@@ -281,6 +331,26 @@ export function ProductForm({
           <p role="alert" className="mt-3 text-sm font-semibold text-kiremit-koyu">
             {uploadError}
           </p>
+        )}
+        {aiEnabled && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 border-t-2 border-dashed border-kraft pt-4">
+            <button
+              type="button"
+              className="btn btn-ikincil min-h-9 py-1 text-sm"
+              disabled={ai.status === "running" || !images[0] || !!images[0].uploading}
+              onClick={() => images[0] && void runAi(images[0].url)}
+            >
+              {ai.status === "running" ? "Fotoğrafa bakılıyor…" : "Fotoğraftan doldur"}
+            </button>
+            <p
+              aria-live="polite"
+              className={`min-w-0 flex-1 text-sm ${ai.status === "error" ? "font-semibold text-kiremit-koyu" : "text-murekkep-soluk"}`}
+            >
+              {ai.status === "idle" && "Kapak fotoğrafından ad, açıklama, kategori ve Hediş etiketi önerir; yalnızca boş alanları doldurur."}
+              {ai.status === "running" && "Yapay zeka kapak fotoğrafına bakıyor… Ücretsiz modelde 30 saniye kadar sürebilir; bu sırada formu doldurmaya devam edebilirsin."}
+              {(ai.status === "done" || ai.status === "error") && ai.message}
+            </p>
+          </div>
         )}
       </Panel>
 

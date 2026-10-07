@@ -12,7 +12,13 @@ const PNG = Buffer.from(
 );
 
 test.describe.configure({ mode: "serial" });
-test.beforeEach(async ({ page }) => hedisGorulmus(page));
+test.beforeEach(async ({ page }) => {
+  await hedisGorulmus(page);
+  // Gerçek yapay zeka modeline gitme (yavaş ve günlük kotalı); varsayılan olarak "meşgul" cevabı
+  await page.route("**/api/admin/ai-oneri", (route) =>
+    route.fulfill({ status: 502, json: { error: "Ücretsiz modeller şu an meşgul, birazdan tekrar dene" } }),
+  );
+});
 
 async function login(page: Page) {
   await page.goto("/admin/giris");
@@ -95,6 +101,43 @@ test.describe("girişli", () => {
     } finally {
       await save(original);
     }
+  });
+
+  test("yapay zeka önerisi yalnızca boş alanları doldurur", async ({ page }) => {
+    await login(page);
+    await page.goto("/admin/urunler/yeni", { waitUntil: "networkidle" });
+    const catId = await page.getByLabel("Kategori").locator("option").nth(1).getAttribute("value");
+    await page.route("**/api/admin/ai-oneri", (route) =>
+      route.fulfill({
+        json: {
+          model: "test/model",
+          suggestion: {
+            name: "Önerilen Ad",
+            description: "Önerilen açıklama.",
+            categoryId: catId,
+            gender: "KADIN",
+            recipients: ["anne", "teyze"],
+            hobbies: ["moda"],
+            alt: "Önerilen fotoğraf açıklaması",
+          },
+        },
+      }),
+    );
+    await page.getByLabel("Ürün adı").fill("Benim adım");
+    await page.locator('input[type="file"]').setInputFiles({ name: "a.png", mimeType: "image/png", buffer: PNG });
+    await expect(page.getByText(/^Doldurdum: açıklama, kategori, Hediş etiketleri, fotoğraf açıklaması./)).toBeVisible();
+
+    await expect(page.getByLabel("Ürün adı")).toHaveValue("Benim adım");
+    await expect(page.getByLabel("Kategori")).toHaveValue(catId!);
+    await expect(page.getByLabel("Fotoğraf açıklaması")).toHaveValue("Önerilen fotoğraf açıklaması");
+    await expect(page.getByRole("radio", { name: "Kadın" })).toBeChecked();
+    await expect(page.getByRole("checkbox", { name: "Teyze" })).toBeChecked();
+    await expect(page.getByRole("button", { name: "Moda & stil" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByLabel("Etiketleri kontrol ettim")).not.toBeChecked();
+
+    // İkinci kez çalıştırınca dolu alanlara dokunmaz
+    await page.getByRole("button", { name: "Fotoğraftan doldur" }).click();
+    await expect(page.getByText("Boş alan yoktu, hiçbir şeyi değiştirmedim.")).toBeVisible();
   });
 
   test("ayarlar: WhatsApp numarası normalize edilir", async ({ page }) => {

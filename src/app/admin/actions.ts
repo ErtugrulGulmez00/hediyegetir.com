@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { parseProductForm, type FieldErrors } from "@/lib/admin/product-input";
+import { DEFAULT_AI_MODEL } from "@/lib/ai/product-vision";
 import { login, logout, requireAdmin } from "@/lib/auth";
 import { CATALOG_TAG, SETTINGS_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
@@ -183,6 +184,11 @@ const SettingsInput = z.object({
     .string()
     .trim()
     .refine((u) => u === "" || /^https:\/\/(www\.)?instagram\.com\/[\w.]+\/?$/.test(u), "Örnek: https://instagram.com/hesabin"),
+  aiModel: z
+    .string()
+    .trim()
+    .transform((m) => m || DEFAULT_AI_MODEL)
+    .refine((m) => /^~?[\w.-]+\/[\w.:-]+$/.test(m), "Model adı şu biçimde olmalı: saglayici/model-adi"),
 });
 
 export async function saveSettingsAction(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
