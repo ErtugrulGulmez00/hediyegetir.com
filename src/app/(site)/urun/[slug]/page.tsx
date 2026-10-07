@@ -93,7 +93,9 @@ async function ProductDetails({ params }: Pick<PageProps<"/urun/[slug]">, "param
         <ProductGallery images={product.images} name={product.name} />
 
         <div className="relative md:pt-4">
-          <Stamp className="absolute -top-4 right-0 hidden sm:inline-flex" />
+          <div className="absolute -top-4 right-0 hidden sm:block">
+            <Stamp />
+          </div>
           <h1 className="pr-0 text-3xl sm:pr-24 sm:text-4xl">{product.name}</h1>
           <PriceTag
             size="lg"

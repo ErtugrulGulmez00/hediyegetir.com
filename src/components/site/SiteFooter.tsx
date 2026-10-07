@@ -19,19 +19,19 @@ export async function SiteFooter() {
           <p className="flex items-center gap-2 font-baslik text-xl font-semibold">
             <GiftIcon className="size-7" /> hediyegetir
           </p>
-          <p className="mt-2 max-w-sm text-[0.95rem] text-murekkep/80">
+          <p className="mt-2 max-w-sm text-[0.95rem] text-murekkep">
             Elde örülen çantalar, giysiler ve küçük güzellikler. Online ödeme yok; siparişini WhatsApp&apos;tan birlikte
             netleştiriyoruz.
           </p>
         </div>
         <nav aria-label="Alt menü" className="flex flex-col gap-1.5">
-          <span className="font-el text-xl text-kiremit-koyu">Gezin</span>
+          <span className="font-el text-xl text-murekkep">Gezin</span>
           <Link href="/" className="hover:underline">Hediş&apos;e sor</Link>
           <Link href="/magaza" className="hover:underline">Mağaza</Link>
           <Link href="/sepet" className="hover:underline">Sepet</Link>
         </nav>
         <div className="flex flex-col gap-1.5">
-          <span className="font-el text-xl text-kiremit-koyu">Bize ulaş</span>
+          <span className="font-el text-xl text-murekkep">Bize ulaş</span>
           {settings.whatsappNumber && (
             <a href={`https://wa.me/${settings.whatsappNumber}`} className="hover:underline" rel="noopener" target="_blank">
               WhatsApp
@@ -45,7 +45,7 @@ export async function SiteFooter() {
           <Link href="/kvkk" className="hover:underline">KVKK ve çerezler</Link>
         </div>
       </div>
-      <p className="border-t border-murekkep/15 px-4 py-4 text-center text-sm text-murekkep/70">
+      <p className="border-t border-murekkep/20 px-4 py-4 text-center text-sm text-murekkep">
         © <CopyrightYear /> hediyegetir.com
       </p>
     </footer>

@@ -10,10 +10,10 @@ export function Stamp({
 }) {
   return (
     <span
-      className={`inline-flex size-20 items-center justify-center rounded-full border-2 border-kiremit p-1 text-center font-el text-lg leading-none text-kiremit mix-blend-multiply ${className}`}
+      className={`inline-flex size-20 items-center justify-center rounded-full border-2 border-kiremit-koyu p-1 text-center font-el text-lg leading-none text-kiremit-koyu ${className}`}
       style={{ rotate: `${rotate}deg` }}
     >
-      <span className="flex size-full items-center justify-center rounded-full border border-dashed border-kiremit/70 px-1">
+      <span className="flex size-full items-center justify-center rounded-full border border-dashed border-kiremit-koyu/70 px-1">
         {children}
       </span>
     </span>

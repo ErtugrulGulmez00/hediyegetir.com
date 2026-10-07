@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { HedisProduct, HedisResponse } from "@/app/api/hedis/oneri/route";
 import { ProductCard } from "@/components/site/ProductCard";
 import { Scribble } from "@/components/ui/Scribble";
@@ -45,8 +45,18 @@ export function HedisChat() {
   const [result, setResult] = useState<HedisResponse | null>(null);
   const [thinkingLine, setThinkingLine] = useState(0);
   const [returning, setReturning] = useState<{ recipient: Recipient | undefined } | null>(null);
-  const questionRef = useRef<HTMLHeadingElement>(null);
   const interacted = useRef(false);
+
+  // Yeni soru başlığı DOM'a girdiği anda odaklan (ilk yüklemede değil). Efekt yerine callback ref:
+  // geçiş animasyonu yüzünden yeni başlık, adım değiştikten bir süre sonra yüklenir.
+  const questionRef = useCallback(
+    (el: HTMLHeadingElement | null) => {
+      if (!el || !interacted.current) return;
+      el.focus({ preventScroll: true });
+      el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    },
+    [reduce],
+  );
 
   const recipient = answers.recipient ? recipientByKey(answers.recipient) : undefined;
 
@@ -56,15 +66,6 @@ export function HedisChat() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage yalnızca mount sonrası okunabilir
     if (last) setReturning({ recipient: recipientByKey(last) });
   }, []);
-
-  // Yeni soruya odaklan ve görünür yap (ilk yüklemede değil)
-  useEffect(() => {
-    if (!interacted.current) return;
-    const el = questionRef.current;
-    if (!el) return;
-    el.focus({ preventScroll: true });
-    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
-  }, [step, reduce]);
 
   // Düşünürken dönen cümleler
   useEffect(() => {
@@ -340,7 +341,7 @@ function Question({
 }: {
   title: string;
   children: React.ReactNode;
-  questionRef: React.RefObject<HTMLHeadingElement | null>;
+  questionRef: React.Ref<HTMLHeadingElement>;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -377,7 +378,7 @@ function Results({
 }: {
   recipient: Recipient;
   result: HedisResponse;
-  questionRef: React.RefObject<HTMLHeadingElement | null>;
+  questionRef: React.Ref<HTMLHeadingElement>;
   onRestart: () => void;
 }) {
   const n = result.products.length;
