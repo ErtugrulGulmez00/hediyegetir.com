@@ -138,6 +138,21 @@
   }
 }
 
+/* Hediş'in göz kırpması */
+@keyframes goz-kirp {
+  0%,
+  93%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+.hedis-goz {
+  animation: goz-kirp 4.2s infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

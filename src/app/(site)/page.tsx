@@ -1,24 +1,23 @@
-import Link from "next/link";
-import { NotePaper } from "@/components/ui/NotePaper";
+import type { Metadata } from "next";
+import { HedisChat } from "@/components/hedis/HedisChat";
 import { Scribble } from "@/components/ui/Scribble";
 
-// Geçici giriş sayfası: Aşama 7'de Hediş asistanıyla değiştirilecek.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
 export default function HomePage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-10 sm:px-6">
-      <h1 className="max-w-2xl text-4xl sm:text-6xl">
-        Kime hediye alacağını <Scribble>biz düşünelim</Scribble>.
+    <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 sm:pt-10">
+      <h1 className="max-w-3xl text-[2.1rem] leading-[1.08] sm:text-6xl">
+        Kime ne alacağını bilemedin mi? <Scribble>Hediş&apos;e sor</Scribble>.
       </h1>
-      <NotePaper className="mt-12 max-w-md" lined>
-        <p className="font-el text-2xl">Hediş yakında burada olacak.</p>
-        <p className="mt-2">
-          Şimdilik{" "}
-          <Link href="/magaza" className="link-el font-semibold">
-            mağazaya göz atabilirsin
-          </Link>
-          .
-        </p>
-      </NotePaper>
+      <p className="mt-4 max-w-xl text-murekkep-soluk sm:text-lg">
+        Birkaç soruya cevap ver, el yapımı ürünlerimiz arasından sana uygun beş hediye seçsin.
+      </p>
+      <div className="mt-10 sm:mt-14">
+        <HedisChat />
+      </div>
     </div>
   );
 }
