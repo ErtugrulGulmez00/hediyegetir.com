@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { VisitTracker } from "@/components/site/VisitTracker";
 import { CartHydrator } from "@/store/cart";
 
 export default function SiteLayout({ children }: LayoutProps<"/">) {
@@ -17,6 +19,10 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
       </main>
       <SiteFooter />
       <CartHydrator />
+      {/* usePathname istek anında bilinir; statik kabuğu bekletmesin */}
+      <Suspense fallback={null}>
+        <VisitTracker />
+      </Suspense>
     </>
   );
 }
