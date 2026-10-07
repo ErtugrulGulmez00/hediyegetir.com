@@ -14,9 +14,9 @@ export function GiftIcon({ className = "" }: { className?: string }) {
 export function Logo({ className = "" }: { className?: string }) {
   return (
     <Link href="/" className={`group inline-flex items-end gap-1.5 ${className}`} aria-label="hediyegetir ana sayfa">
-      <GiftIcon className="size-8 -rotate-6 transition-transform group-hover:rotate-3" />
-      <span className="font-baslik text-[1.6rem] leading-none font-semibold tracking-tight">
-        hediye<span className="font-el text-[1.9rem] font-bold text-kiremit">getir</span>
+      <GiftIcon className="size-7 -rotate-6 sm:size-8 transition-transform group-hover:rotate-3" />
+      <span className="font-baslik text-[1.35rem] leading-none sm:text-[1.6rem] font-semibold tracking-tight">
+        hediye<span className="font-el text-[1.6rem] font-bold sm:text-[1.9rem] text-kiremit">getir</span>
       </span>
     </Link>
   );

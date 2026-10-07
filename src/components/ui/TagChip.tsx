@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const base =
-  "relative inline-flex min-h-10 items-center gap-1.5 border-[1.5px] border-murekkep py-1.5 pr-3.5 pl-6 text-[0.95rem] font-semibold transition-[background-color,transform] duration-150 select-none";
+  "relative inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap border-[1.5px] border-murekkep py-1.5 pr-3.5 pl-6 text-[0.95rem] font-semibold transition-[background-color,transform] duration-150 select-none";
 const shape = { clipPath: "polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%)" } as const;
 
 function Hole() {

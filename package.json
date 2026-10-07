@@ -10,6 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "postinstall": "prisma generate",
     "db:up": "docker compose up -d",
     "db:migrate": "prisma migrate dev",
@@ -36,6 +37,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/turbopack": "^4",
     "@types/html-to-text": "^9.0.4",
     "@types/node": "^22.20.5",
