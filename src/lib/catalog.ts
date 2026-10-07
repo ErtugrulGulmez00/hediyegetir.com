@@ -4,8 +4,8 @@ import type { Prisma } from "@/generated/prisma/client";
 import { db } from "./db";
 import { budgetByKey, type BudgetKey } from "./hedis/config";
 
-// Katalog okumaları önbellekli. Admin'deki değişiklikler updateTag(CATALOG_TAG) ile tazeler;
-// CLI'dan yapılan ikas senkronu en geç bir saat içinde görünür.
+// Katalog okumaları önbellekli. Admin'deki değişiklikler updateTag(CATALOG_TAG) ile hemen tazeler;
+// veritabanına doğrudan yapılan değişiklikler (ör. urun-aktar betiği) en geç bir saatte görünür.
 export const CATALOG_TAG = "katalog";
 export const SETTINGS_TAG = "ayarlar";
 

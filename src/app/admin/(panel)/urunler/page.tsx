@@ -15,8 +15,6 @@ const FILTERS = {
   aktif: { label: "Yayında", where: { isActive: true } },
   pasif: { label: "Pasif", where: { isActive: false } },
   etiketsiz: { label: "Etiketi onaysız", where: { hedisReviewed: false } },
-  ikas: { label: "ikas'tan", where: { source: "IKAS" } },
-  elle: { label: "Elle eklenen", where: { source: "MANUAL" } },
 } satisfies Record<string, { label: string; where: Prisma.ProductWhereInput }>;
 type FilterKey = keyof typeof FILTERS;
 
@@ -101,9 +99,7 @@ export default async function AdminProducts(props: PageProps<"/admin/urunler">) 
                   <span>{formatPrice(p.priceKurus)}</span>
                   {p.category && <span>· {p.category.name}</span>}
                   <span>· {p.stock == null ? "sipariş üzerine" : `stok ${p.stock}`}</span>
-                  {p.source === "IKAS" && <Badge>ikas</Badge>}
                   {!p.hedisReviewed && <Badge tone="hardal">etiket onaysız</Badge>}
-                  {p.lockedFields.length > 0 && <Badge tone="soluk">{p.lockedFields.length} kilitli alan</Badge>}
                 </div>
               </div>
               <ActiveToggle productId={p.id} active={p.isActive} />

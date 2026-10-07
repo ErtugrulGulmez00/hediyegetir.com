@@ -1,7 +1,6 @@
-// Admin ürün formunun doğrulaması ve ikas kilit hesabı. Saf fonksiyonlar (test edilebilir).
+// Admin ürün formunun doğrulaması. Saf fonksiyon (test edilebilir).
 import { z } from "zod";
 import { HOBBIES, RECIPIENTS } from "../hedis/config";
-import type { LockableField } from "../ikas/sync";
 import { parsePriceInput } from "../money";
 import { slugify } from "../slug";
 import { MAX_IMAGES_PER_PRODUCT } from "./images";
@@ -32,7 +31,6 @@ export const ProductFormSchema = z.object({
   hobbies: z.array(z.enum(hobbyKeys)).default([]),
   hedisReviewed: z.boolean(),
   images: z.array(ImageInput).max(MAX_IMAGES_PER_PRODUCT, `En fazla ${MAX_IMAGES_PER_PRODUCT} fotoğraf`),
-  unlock: z.array(z.string()).default([]),
 });
 export type ProductFormInput = z.input<typeof ProductFormSchema>;
 
@@ -51,7 +49,6 @@ export type ProductData = {
   hobbies: string[];
   hedisReviewed: boolean;
   images: ImageInput[];
-  unlock: LockableField[];
 };
 
 export type FieldErrors = Partial<Record<string, string>>;
@@ -106,52 +103,6 @@ export function parseProductForm(raw: unknown): { ok: true; data: ProductData } 
       hobbies: [...new Set(v.hobbies)],
       hedisReviewed: v.hedisReviewed,
       images: v.images,
-      unlock: v.unlock.filter(isLockable),
     },
   };
 }
-
-const LOCKABLE = ["name", "description", "price", "stock", "category", "images", "isActive"] as const;
-const isLockable = (s: string): s is LockableField => (LOCKABLE as readonly string[]).includes(s);
-
-type Existing = {
-  name: string;
-  description: string;
-  priceKurus: number;
-  compareAtPriceKurus: number | null;
-  stock: number | null;
-  categoryId: string | null;
-  isActive: boolean;
-  lockedFields: string[];
-  images: { url: string }[];
-};
-
-/**
- * ikas ürününde admin'in değiştirdiği alanları kilitler (senkron üzerine yazmasın).
- * "unlock" ile açıkça kilidi açılan alanlar, aynı kayıtta değişmiş olsa bile açılır.
- */
-export function computeLockedFields(existing: Existing, next: ProductData): string[] {
-  const changed = new Set<string>(existing.lockedFields);
-  if (next.name !== existing.name) changed.add("name");
-  if (next.description !== existing.description) changed.add("description");
-  if (next.priceKurus !== existing.priceKurus || next.compareAtPriceKurus !== existing.compareAtPriceKurus)
-    changed.add("price");
-  if (next.stock !== existing.stock) changed.add("stock");
-  if (next.categoryId !== existing.categoryId) changed.add("category");
-  if (next.isActive !== existing.isActive) changed.add("isActive");
-  const before = existing.images.map((i) => i.url).join("\n");
-  const after = next.images.map((i) => i.url).join("\n");
-  if (before !== after) changed.add("images");
-  for (const f of next.unlock) changed.delete(f);
-  return LOCKABLE.filter((f) => changed.has(f));
-}
-
-export const LOCK_LABELS: Record<LockableField, string> = {
-  name: "Ad",
-  description: "Açıklama",
-  price: "Fiyat",
-  stock: "Stok",
-  category: "Kategori",
-  images: "Fotoğraflar",
-  isActive: "Yayın durumu",
-};

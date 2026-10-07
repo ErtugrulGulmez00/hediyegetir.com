@@ -16,11 +16,6 @@ enum Gender {
   UNISEX
 }
 
-enum ProductSource {
-  IKAS
-  MANUAL
-}
-
 model Category {
   id        String    @id @default(cuid())
   name      String
@@ -52,13 +47,6 @@ model Product {
   hobbies       String[] @default([])
   hedisReviewed Boolean  @default(false)
 
-  // ikas kaynağı
-  source       ProductSource @default(MANUAL)
-  ikasId       String?       @unique
-  ikasUrl      String?
-  // Admin'in elle değiştirdiği alanlar; ikas senkronu bunların üzerine yazmaz
-  lockedFields String[]      @default([])
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -74,8 +62,6 @@ model ProductImage {
   sortOrder Int     @default(0)
   // Vercel Blob'da mı duruyor (silinirken blob da silinir)
   isBlob    Boolean @default(false)
-  // ikas görselinin kimliği (senkronda tekrar yüklemeyi önler)
-  ikasImageId String?
 
   @@index([productId, sortOrder])
 }
@@ -104,21 +90,9 @@ model VisitorDay {
   @@id([date, visitorHash])
 }
 
-model IkasSyncLog {
-  id          String    @id @default(cuid())
-  startedAt   DateTime  @default(now())
-  finishedAt  DateTime?
-  status      String    @default("RUNNING") // RUNNING | SUCCESS | PARTIAL | FAILED
-  added       Int       @default(0)
-  updated     Int       @default(0)
-  deactivated Int       @default(0)
-  failed      Int       @default(0)
-  messages    String[]  @default([])
-}
-
 model LoginAttempt {
   id        String   @id @default(cuid())
-  key       String // IP + kullanıcı adı hash'i
+  key       String // istemci IP'sinin hash'i
   success   Boolean
   createdAt DateTime @default(now())
 

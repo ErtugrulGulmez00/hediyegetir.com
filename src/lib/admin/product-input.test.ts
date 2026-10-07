@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeLockedFields, parseProductForm, type ProductFormInput } from "./product-input";
+import { parseProductForm, type ProductFormInput } from "./product-input";
 
 const base: ProductFormInput = {
   name: "Hasır Çanta",
@@ -16,7 +16,6 @@ const base: ProductFormInput = {
   hobbies: ["moda"],
   hedisReviewed: true,
   images: [{ url: "https://x.public.blob.vercel-storage.com/a.webp", alt: "", isBlob: true }],
-  unlock: [],
 };
 
 describe("parseProductForm", () => {
@@ -49,41 +48,5 @@ describe("parseProductForm", () => {
 
   it("javascript: gibi görsel adreslerini reddeder", () => {
     expect(parseProductForm({ ...base, images: [{ url: "javascript:alert(1)", alt: "", isBlob: false }] }).ok).toBe(false);
-  });
-});
-
-describe("computeLockedFields", () => {
-  const existing = {
-    name: "Hasır Çanta",
-    description: "Güzel",
-    priceKurus: 125_000,
-    compareAtPriceKurus: null,
-    stock: null,
-    categoryId: null,
-    isActive: true,
-    lockedFields: ["stock"],
-    images: [{ url: "https://x.public.blob.vercel-storage.com/a.webp" }],
-  };
-  const parsed = (over: Partial<ProductFormInput>) => {
-    const r = parseProductForm({ ...base, ...over });
-    if (!r.ok) throw new Error(JSON.stringify(r.errors));
-    return r.data;
-  };
-
-  it("değişmeyen alanları kilitlemez, mevcut kilitleri korur", () => {
-    expect(computeLockedFields(existing, parsed({}))).toEqual(["stock"]);
-  });
-
-  it("değişen alanları kilitler", () => {
-    expect(computeLockedFields(existing, parsed({ name: "Yeni Ad", price: "999", images: [] }))).toEqual([
-      "name",
-      "price",
-      "stock",
-      "images",
-    ]);
-  });
-
-  it("kilidi açılan alan açılır", () => {
-    expect(computeLockedFields(existing, parsed({ name: "Yeni Ad", unlock: ["name", "stock"] }))).toEqual([]);
   });
 });

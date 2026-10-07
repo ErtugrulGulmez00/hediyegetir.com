@@ -37,9 +37,6 @@ export default async function NewProductPage() {
           hobbies: [],
           hedisReviewed: true,
           images: [],
-          source: "MANUAL",
-          lockedFields: [],
-          ikasUrl: null,
         }}
         categories={categories}
         blobEnabled={!!process.env.BLOB_READ_WRITE_TOKEN}

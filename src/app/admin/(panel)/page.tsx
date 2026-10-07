@@ -20,11 +20,10 @@ export default async function AdminHome() {
   const days30 = lastDays(new Date(), 30);
   const from7 = days30[days30.length - 7];
 
-  const [active, inactive, unreviewed, lastSync, stats, unique7, unique30] = await Promise.all([
+  const [active, inactive, unreviewed, stats, unique7, unique30] = await Promise.all([
     db.product.count({ where: { isActive: true } }),
     db.product.count({ where: { isActive: false } }),
     db.product.count({ where: { hedisReviewed: false, isActive: true } }),
-    db.ikasSyncLog.findFirst({ orderBy: { startedAt: "desc" } }),
     db.dailyStat.findMany({ where: { date: { gte: days30[0] } } }),
     distinctVisitors(from7),
     distinctVisitors(days30[0]),
@@ -77,25 +76,12 @@ export default async function AdminHome() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label="Yayındaki ürün" value={active} href="/admin/urunler?durum=aktif" />
         <Stat label="Pasif ürün" value={inactive} href="/admin/urunler?durum=pasif" />
-        <Panel>
-          <p className="text-sm font-bold">Son ikas senkronu</p>
-          {lastSync ? (
-            <p className="mt-1">
-              <span className="text-lg font-semibold">
-                {lastSync.startedAt.toLocaleString("tr-TR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Istanbul" })}
-              </span>
-              <br />
-              <span className="text-sm text-murekkep-soluk">
-                {lastSync.status} · {lastSync.added} yeni, {lastSync.updated} güncel
-              </span>
-            </p>
-          ) : (
-            <p className="mt-1 text-murekkep-soluk">Henüz yapılmadı</p>
-          )}
-          <Link href="/admin/ikas" className="link-el mt-2 inline-block text-sm font-semibold">
-            Senkron sayfası
-          </Link>
-        </Panel>
+        <Link
+          href="/admin/urunler/yeni"
+          className="flex items-center justify-center rounded-sm border-2 border-dashed border-kraft-koyu p-5 font-semibold text-murekkep-soluk hover:border-murekkep hover:text-murekkep"
+        >
+          + Yeni ürün ekle
+        </Link>
       </div>
     </>
   );

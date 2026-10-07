@@ -5,9 +5,8 @@ import Image from "next/image";
 import { useActionState, useRef, useState } from "react";
 import { TagChip } from "@/components/ui/TagChip";
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_IMAGES_PER_PRODUCT } from "@/lib/admin/images";
-import { LOCK_LABELS, type ProductFormInput } from "@/lib/admin/product-input";
+import type { ProductFormInput } from "@/lib/admin/product-input";
 import { HOBBIES, RECIPIENTS, type GenderKey } from "@/lib/hedis/config";
-import type { LockableField } from "@/lib/ikas/sync";
 import { slugify } from "@/lib/slug";
 import { deleteProductAction, saveProductAction, type ProductFormState } from "../../actions";
 import { Field, inputClass, Panel } from "../ui";
@@ -28,9 +27,6 @@ export type ProductFormInitial = {
   hobbies: string[];
   hedisReviewed: boolean;
   images: { id: string; url: string; alt: string; isBlob: boolean }[];
-  source: "IKAS" | "MANUAL";
-  lockedFields: string[];
-  ikasUrl: string | null;
 };
 
 type ImgItem = { key: string; id?: string; url: string; alt: string; isBlob: boolean; uploading?: boolean; preview?: string };
@@ -49,7 +45,6 @@ export function ProductForm({
 }) {
   const [v, setV] = useState(initial);
   const [images, setImages] = useState<ImgItem[]>(() => initial.images.map((i) => ({ ...i, key: nextKey() })));
-  const [unlock, setUnlock] = useState<LockableField[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragKey, setDragKey] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -61,7 +56,6 @@ export function ProductForm({
   const err = state.errors ?? {};
   const set = <K extends keyof ProductFormInitial>(k: K, val: ProductFormInitial[K]) => setV((s) => ({ ...s, [k]: val }));
   const uploading = images.some((i) => i.uploading);
-  const locked = new Set(initial.lockedFields);
 
   const payload: ProductFormInput = {
     name: v.name,
@@ -78,7 +72,6 @@ export function ProductForm({
     hobbies: v.hobbies,
     hedisReviewed: v.hedisReviewed,
     images: images.filter((i) => !i.uploading).map(({ id, url, alt, isBlob }) => ({ id, url, alt, isBlob })),
-    unlock,
   };
 
   async function handleFiles(files: FileList | null) {
@@ -146,13 +139,6 @@ export function ProductForm({
     else set("gender", "UNISEX");
   };
 
-  const lockNote = (field: LockableField) =>
-    initial.source === "IKAS" && locked.has(field) && !unlock.includes(field) ? (
-      <span className="ml-1 text-xs font-normal text-murekkep-soluk" title="ikas senkronu bu alanın üzerine yazmaz">
-        (kilitli)
-      </span>
-    ) : null;
-
   return (
     <form action={formAction} className="flex flex-col gap-6 pb-24">
       <input type="hidden" name="payload" value={JSON.stringify(payload)} />
@@ -161,43 +147,6 @@ export function ProductForm({
         <p role="alert" className="border-l-4 border-kiremit bg-kagit px-4 py-3 font-semibold">
           {state.message}
         </p>
-      )}
-
-      {initial.source === "IKAS" && (
-        <Panel title="ikas bağlantısı">
-          <p className="text-[0.95rem]">
-            Bu ürün ikas&apos;tan geliyor
-            {initial.ikasUrl && (
-              <>
-                {" "}
-                (
-                <a href={initial.ikasUrl} target="_blank" rel="noopener" className="link-el">
-                  ikas sayfası
-                </a>
-                )
-              </>
-            )}
-            . Burada değiştirdiğin alanlar otomatik kilitlenir; ikas senkronu onların üzerine yazmaz.
-          </p>
-          {initial.lockedFields.length > 0 && (
-            <fieldset className="mt-4">
-              <legend className="text-sm font-bold">Kilitli alanlar — kilidi açılan alan bir sonraki senkronda ikas&apos;taki değeri alır</legend>
-              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
-                {initial.lockedFields.map((f) => (
-                  <label key={f} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-kiremit"
-                      checked={unlock.includes(f as LockableField)}
-                      onChange={() => setUnlock((s) => toggleIn(s, f) as LockableField[])}
-                    />
-                    {LOCK_LABELS[f as LockableField] ?? f}: kilidi aç
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          )}
-        </Panel>
       )}
 
       <Panel title="Temel bilgiler">
@@ -229,7 +178,7 @@ export function ProductForm({
           <div className="flex flex-col justify-end gap-2">
             <label className="flex items-center gap-2 font-semibold">
               <input type="checkbox" className="size-4 accent-kiremit" checked={v.isActive} onChange={(e) => set("isActive", e.target.checked)} />
-              Sitede yayında {lockNote("isActive")}
+              Sitede yayında
             </label>
             <label className="flex items-center gap-2 font-semibold">
               <input type="checkbox" className="size-4 accent-kiremit" checked={v.isFeatured} onChange={(e) => set("isFeatured", e.target.checked)} />
@@ -418,8 +367,8 @@ export function ProductForm({
             type="button"
             className="ml-auto text-sm font-semibold text-kiremit-koyu hover:underline"
             onClick={async () => {
-              const extra = initial.source === "IKAS" ? "\n\nNot: ikas'ta duruyorsa bir sonraki senkronda yeniden eklenir. Yalnızca gizlemek için 'yayında' kutusunu kaldır." : "";
-              if (confirm(`"${initial.name}" silinsin mi? Bu geri alınamaz.${extra}`)) await deleteProductAction(initial.id!);
+              const msg = `"${initial.name}" silinsin mi? Bu geri alınamaz. Yalnızca gizlemek istiyorsan "Sitede yayında" kutusunu kaldırman yeterli.`;
+              if (confirm(msg)) await deleteProductAction(initial.id!);
             }}
           >
             Ürünü sil

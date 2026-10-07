@@ -16,7 +16,6 @@ cp .env.example .env          # sonra AUTH_SECRET, VISITOR_SALT, ADMIN_PASSWORD_
 npm run db:up                 # Postgres'i Docker'da 5433 portunda başlatır
 npm run db:migrate            # şemayı uygular
 npm run db:seed               # ayarlar satırı (örnek ürünler için: npm run db:seed -- --demo)
-npm run ikas:sync             # gerçek ürünleri ikas'tan çeker
 npm run dev
 ```
 
@@ -31,7 +30,7 @@ Admin paneli: http://localhost:3000/admin
 | `npm run test:e2e` | Uçtan uca testler (Playwright; admin testleri için `E2E_ADMIN_PASSWORD` gerekir) |
 | `npm run typecheck` | TypeScript kontrolü |
 | `npm run db:studio` | Prisma Studio ile veritabanına göz at |
-| `npm run ikas:sync` | ikas mağazasından ürünleri içe aktarır (admin panelinde de buton var) |
+| `npm run urun-aktar` | Yerel ürünleri/kategorileri/ayarları başka bir veritabanına taşır, fotoğrafları Blob'a yükler (yayına ilk geçişte bir kez) |
 | `npm run hash-password -- "şifre"` | Admin şifresi için bcrypt hash üretir |
 
 ## Yayına alma (Vercel + Neon + Blob)
@@ -52,10 +51,17 @@ Admin paneli: http://localhost:3000/admin
    | `ADMIN_PASSWORD_HASH` | `npm run hash-password -- "şifre"` çıktısındaki ilk satır (Vercel'de `$` kaçışı **gerekmez**) |
    | `AUTH_SECRET` | 32+ karakter rastgele dize |
    | `VISITOR_SALT` | rastgele dize |
-   | `IKAS_BASE_URL` | `https://hediyeyolla.ikas.shop` |
 
 5. **Deploy** et. İlk deploy migration'ları uygular.
-6. **İlk kurulum:** `/admin` → giriş → *Ayarlar*'dan WhatsApp numarasını kaydet → *ikas senkronu* → *Şimdi senkronla* (görseller Blob'a kopyalanır) → *Ürünler* → "Etiketi onaysız" filtresiyle her ürünün Hediş etiketlerini kontrol et.
+6. **Ürünleri taşı (bir kez):** Yerel veritabanındaki ürünler, kategoriler ve ayarlar yayına bu bilgisayardan taşınır; fotoğraflar Blob'a yüklenir.
+   ```powershell
+   $env:KAYNAK_DATABASE_URL="postgresql://hediye:hediye@localhost:5433/hediyegetir"
+   $env:HEDEF_DATABASE_URL="<Neon havuzsuz adres>"
+   $env:BLOB_READ_WRITE_TOKEN="<Vercel Blob anahtarı>"
+   npm run urun-aktar -- --dene   # önce neyin taşınacağını gör
+   npm run urun-aktar
+   ```
+   Sonra Vercel'de yeniden deploy et. `/admin` → *Ürünler* → "Etiketi onaysız" filtresiyle Hediş etiketlerini kontrol et.
 7. **Alan adı:** Vercel → *Domains* → `hediyegetir.com` ve `www.hediyegetir.com` ekle; alan adı sağlayıcısında Vercel'in gösterdiği A / CNAME kayıtlarını gir.
 8. **KVKK:** `src/app/(site)/kvkk/page.tsx` içindeki `[İŞLETME ADI]`, `[ADRES]`, `[E-POSTA]`, `[TARİH]` yer tutucularını doldur.
 

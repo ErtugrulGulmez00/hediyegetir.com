@@ -5,11 +5,10 @@ import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
-import { computeLockedFields, parseProductForm, type FieldErrors } from "@/lib/admin/product-input";
+import { parseProductForm, type FieldErrors } from "@/lib/admin/product-input";
 import { login, logout, requireAdmin } from "@/lib/auth";
 import { CATALOG_TAG, SETTINGS_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
-import { syncFromIkas, type SyncReport } from "@/lib/ikas/sync";
 import { slugify, uniqueSlug } from "@/lib/slug";
 import { normalizeWhatsappNumber } from "@/lib/whatsapp";
 
@@ -90,19 +89,17 @@ export async function saveProductAction(
     const created = await db.product.create({
       data: {
         ...fields,
-        source: "MANUAL",
         images: { create: d.images.map((img, i) => ({ url: img.url, alt: img.alt, isBlob: img.isBlob, sortOrder: i })) },
       },
     });
     id = created.id;
   } else {
-    const lockedFields = existing.source === "IKAS" ? computeLockedFields(existing, d) : [];
     const keepIds = new Set(d.images.filter((i) => i.id).map((i) => i.id!));
     const removed = existing.images.filter((i) => !keepIds.has(i.id));
     blobsToDelete.push(...removed.filter((i) => i.isBlob).map((i) => i.url));
 
     await db.$transaction([
-      db.product.update({ where: { id: existing.id }, data: { ...fields, lockedFields } }),
+      db.product.update({ where: { id: existing.id }, data: fields }),
       db.productImage.deleteMany({ where: { id: { in: removed.map((i) => i.id) } } }),
       ...d.images.map((img, i) =>
         img.id && existing.images.some((e) => e.id === img.id)
@@ -131,13 +128,7 @@ export async function deleteProductAction(productId: string) {
 
 export async function toggleProductActiveAction(productId: string, active: boolean) {
   await requireAdmin();
-  const product = await db.product.findUnique({ where: { id: productId }, select: { source: true, lockedFields: true } });
-  if (!product) return;
-  const lockedFields =
-    product.source === "IKAS" && !product.lockedFields.includes("isActive")
-      ? [...product.lockedFields, "isActive"]
-      : product.lockedFields;
-  await db.product.update({ where: { id: productId }, data: { isActive: active, lockedFields } });
+  await db.product.updateMany({ where: { id: productId }, data: { isActive: active } });
   updateTag(CATALOG_TAG);
 }
 
@@ -179,17 +170,6 @@ export async function deleteCategoryAction(categoryId: string) {
     if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025")) throw e;
   }
   updateTag(CATALOG_TAG);
-}
-
-// ---------- ikas ----------
-
-export type SyncState = { report?: SyncReport };
-
-export async function runIkasSyncAction(): Promise<SyncState> {
-  await requireAdmin();
-  const report = await syncFromIkas({ db, baseUrl: process.env.IKAS_BASE_URL || "https://hediyeyolla.ikas.shop" });
-  updateTag(CATALOG_TAG);
-  return { report };
 }
 
 // ---------- Ayarlar ----------

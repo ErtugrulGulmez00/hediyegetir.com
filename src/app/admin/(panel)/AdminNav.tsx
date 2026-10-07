@@ -8,7 +8,6 @@ const LINKS = [
   { href: "/admin", label: "Özet" },
   { href: "/admin/urunler", label: "Ürünler" },
   { href: "/admin/kategoriler", label: "Kategoriler" },
-  { href: "/admin/ikas", label: "ikas senkronu" },
   { href: "/admin/ayarlar", label: "Ayarlar" },
 ];
 

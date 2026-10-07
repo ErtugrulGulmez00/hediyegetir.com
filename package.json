@@ -18,15 +18,14 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "ikas:sync": "tsx --conditions=react-server scripts/ikas-sync.ts",
-    "hash-password": "tsx scripts/hash-password.ts"
+    "hash-password": "tsx scripts/hash-password.ts",
+    "urun-aktar": "tsx scripts/urun-aktar.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@vercel/blob": "^2.8.1",
     "bcryptjs": "^3.0.3",
-    "html-to-text": "^10.0.1",
     "jose": "^6.2.12",
     "motion": "^14.0.0",
     "next": "16.4.0",
@@ -41,7 +40,6 @@
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/turbopack": "^4",
-    "@types/html-to-text": "^9.0.4",
     "@types/node": "^22.20.5",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",

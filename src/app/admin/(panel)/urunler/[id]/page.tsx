@@ -37,9 +37,6 @@ export default async function EditProductPage(props: PageProps<"/admin/urunler/[
     hobbies: product.hobbies,
     hedisReviewed: product.hedisReviewed,
     images: product.images.map((i) => ({ id: i.id, url: i.url, alt: i.alt, isBlob: i.isBlob })),
-    source: product.source,
-    lockedFields: product.lockedFields,
-    ikasUrl: product.ikasUrl,
   };
 
   return (

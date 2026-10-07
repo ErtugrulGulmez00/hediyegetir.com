@@ -70,24 +70,30 @@ test.describe("girişli", () => {
     await expect(page.getByRole("heading", { name })).toHaveCount(0);
   });
 
-  test("ikas ürününde değişen alan kilitlenir, kilidi açılabilir", async ({ page }) => {
+  test("fiyat değişikliği ürün sayfasında hemen görünür", async ({ page }) => {
     await login(page);
-    await page.goto("/admin/urunler?durum=ikas");
-    const link = page.locator("main a[href^='/admin/urunler/c']").first();
-    const original = (await link.innerText()).trim();
-    await link.click();
+    await page.goto("/admin/urunler?q=Kol");
+    await page.getByRole("link", { name: "Handmade Kol Çantası" }).click();
+    await page.getByLabel("Satış fiyatı (₺)").waitFor();
+    const editUrl = page.url();
+    const original = await page.getByLabel("Satış fiyatı (₺)").inputValue();
 
-    await page.getByLabel("Ürün adı").fill(`${original} (düzenlendi)`);
-    await page.getByRole("button", { name: "Kaydet" }).click();
-    await expect(page.getByText("Kaydedildi.")).toBeVisible();
-    await expect(page.getByText("Ad: kilidi aç")).toBeVisible();
+    const save = async (value: string) => {
+      await page.goto(editUrl);
+      await page.getByLabel("Satış fiyatı (₺)").fill(value);
+      await page.getByRole("button", { name: "Kaydet" }).click();
+      // Kayıt bitince ?kaydedildi=1 adresine yönlenir
+      await page.waitForURL(/kaydedildi=1/);
+    };
 
-    // Geri al: adı eski haline getir ve kilidi aç
-    await page.getByLabel("Ürün adı").fill(original);
-    await page.getByLabel("Ad: kilidi aç").check();
-    await page.getByRole("button", { name: "Kaydet" }).click();
-    await expect(page.getByText("Kaydedildi.")).toBeVisible();
-    await expect(page.getByText("Ad: kilidi aç")).toHaveCount(0);
+    try {
+      // Eski (üstü çizili) fiyat 1.100 ₺; satış fiyatı ondan düşük olmalı
+      await save("987");
+      await page.goto("/urun/handmade-kol-cantasi");
+      await expect(page.getByText("₺987").first()).toBeVisible();
+    } finally {
+      await save(original);
+    }
   });
 
   test("ayarlar: WhatsApp numarası normalize edilir", async ({ page }) => {

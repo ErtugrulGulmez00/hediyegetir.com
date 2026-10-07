@@ -14,7 +14,7 @@ const DEMO_CATEGORIES = [
   { name: "Ev & Dekor", slug: "ev-dekor", sortOrder: 3 },
 ];
 
-// Görseller yer tutucudur; gerçek ürünler ikas senkronuyla gelir.
+// Görseller yer tutucudur; yalnızca boş bir veritabanında denemek için.
 const DEMO_PRODUCTS = [
   {
     slug: "demo-orgu-omuz-cantasi",
