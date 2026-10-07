@@ -1,26 +1,150 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+  hediyegetir tasarım dili: kraft kağıt, mürekkep, el yazısı.
+  Yasaklar: mor-mavi gradyan, cam efekti, parıltı ikonları, her şeyi ortalamak,
+  shadow-xl / rounded-2xl yığını. Gölgeler sert ve kaydırılmış (baskı hissi).
+*/
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  --color-krem: #f4ecdf;
+  --color-krem-koyu: #eadfcb;
+  --color-kraft: #d9c3a0;
+  --color-kraft-koyu: #b89d74;
+  --color-murekkep: #2b2420;
+  --color-murekkep-soluk: #6b5e55;
+  --color-kiremit: #b5523b;
+  --color-kiremit-koyu: #93402c;
+  --color-zeytin: #6b7344;
+  --color-hardal: #d9a441;
+  --color-gul: #c98b83;
+  --color-kagit: #fbf7f0;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --font-baslik: var(--font-fraunces), Georgia, serif;
+  --font-el: var(--font-caveat), "Segoe Print", cursive;
+  --font-govde: var(--font-karla), system-ui, sans-serif;
+
+  --shadow-baski: 3px 3px 0 0 var(--color-murekkep);
+  --shadow-baski-sm: 2px 2px 0 0 var(--color-murekkep);
+  --shadow-kagit: 0 1px 0 rgb(43 36 32 / 0.08), 0 6px 14px -8px rgb(43 36 32 / 0.35);
+
+  --animate-sallan: sallan 2.8s ease-in-out infinite;
+  @keyframes sallan {
+    0%,
+    100% {
+      transform: rotate(-2deg);
+    }
+    50% {
+      transform: rotate(2deg);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-krem);
+    /* Kağıt dokusu: çok hafif gürültü */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .17 0 0 0 0 .14 0 0 0 0 .12 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    color: var(--color-murekkep);
+    font-family: var(--font-govde);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-baslik);
+    font-variation-settings: "SOFT" 60, "WONK" 1;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: var(--color-hardal);
+    color: var(--color-murekkep);
+  }
+
+  :focus-visible {
+    outline: 2px dashed var(--color-kiremit);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* Kalın mürekkep çerçeveli, kaydırılmış gölgeli düğme */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.55rem 1.2rem;
+    border: 2px solid var(--color-murekkep);
+    border-radius: 0.375rem;
+    font-weight: 700;
+    box-shadow: var(--shadow-baski);
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease,
+      background-color 120ms ease;
+  }
+  .btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 0 var(--color-murekkep);
+  }
+  .btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 0 var(--color-murekkep);
+  }
+  .btn:disabled {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .btn-ana {
+    background: var(--color-kiremit);
+    color: var(--color-kagit);
+  }
+  .btn-ana:hover {
+    background: var(--color-kiremit-koyu);
+  }
+  .btn-ikincil {
+    background: var(--color-kagit);
+    color: var(--color-murekkep);
+  }
+  .btn-whatsapp {
+    background: var(--color-zeytin);
+    color: var(--color-kagit);
+  }
+
+  /* Bağlantıların altındaki elle çizilmiş dalga */
+  .link-el {
+    text-decoration: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: var(--color-kiremit);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 4px;
+  }
+
+  .kagit {
+    background: var(--color-kagit);
+    box-shadow: var(--shadow-kagit);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
