@@ -9,8 +9,16 @@ export default defineConfig({
     locale: "tr-TR",
   },
   projects: [
-    { name: "masaustu", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobil", use: { ...devices["Pixel 7"] } },
+    // Admin testleri veritabanını değiştirir (geçici ürün ekler, fiyat değiştirir); paralel çalışan
+    // vitrin testlerini bozmasın diye onlar bittikten sonra ayrı çalışır.
+    { name: "masaustu", use: { ...devices["Desktop Chrome"] }, testIgnore: /admin\.spec/ },
+    { name: "mobil", use: { ...devices["Pixel 7"] }, testIgnore: /admin\.spec/ },
+    {
+      name: "admin",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: /admin\.spec/,
+      dependencies: ["masaustu", "mobil"],
+    },
   ],
   webServer: {
     command: "npm run dev",

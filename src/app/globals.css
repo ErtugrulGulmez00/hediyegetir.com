@@ -138,6 +138,20 @@
   }
 }
 
+/* Hediş penceresi: aşağıdan hafifçe gelir */
+@keyframes pencere-gel {
+  from {
+    opacity: 0;
+    transform: translateY(16px) rotate(-0.4deg);
+  }
+}
+.hedis-pencere[open] {
+  animation: pencere-gel 260ms ease-out;
+}
+.hedis-pencere[open]::backdrop {
+  animation: pencere-gel 200ms ease-out;
+}
+
 /* Hediş'in göz kırpması */
 @keyframes goz-kirp {
   0%,

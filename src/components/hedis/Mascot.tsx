@@ -5,7 +5,18 @@ import { motion, useReducedMotion } from "motion/react";
 export type MascotMood = "idle" | "talking" | "thinking" | "happy";
 
 /** Hediş: yüzü olan, kapağı açılıp kapanan bir hediye kutusu. */
-export function Mascot({ mood = "idle", className = "", bumpKey }: { mood?: MascotMood; className?: string; bumpKey?: string | number }) {
+export function Mascot({
+  mood = "idle",
+  className = "",
+  bumpKey,
+  decorative = false,
+}: {
+  mood?: MascotMood;
+  className?: string;
+  bumpKey?: string | number;
+  /** Yanında zaten "Hediş" yazıyorsa ekran okuyucuya ikinci kez okunmasın */
+  decorative?: boolean;
+}) {
   const reduce = useReducedMotion();
 
   const lid = reduce
@@ -26,8 +37,9 @@ export function Mascot({ mood = "idle", className = "", bumpKey }: { mood?: Masc
       key={reduce ? undefined : bumpKey}
       viewBox="0 0 120 120"
       className={className}
-      role="img"
-      aria-label="Hediş, hediye kutusu maskotu"
+      role={decorative ? undefined : "img"}
+      aria-label={decorative ? undefined : "Hediş, hediye kutusu maskotu"}
+      aria-hidden={decorative || undefined}
       initial={reduce || mood !== "talking" ? false : { y: 0 }}
       animate={reduce || mood !== "talking" ? undefined : { y: [0, -6, 0, -2, 0] }}
       transition={{ duration: 0.55, ease: "easeOut" }}

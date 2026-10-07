@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { HedisDialog, HedisLauncher } from "@/components/hedis/HedisDialog";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { VisitTracker } from "@/components/site/VisitTracker";
@@ -19,9 +20,11 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
       </main>
       <SiteFooter />
       <CartHydrator />
+      <HedisLauncher />
       {/* usePathname istek anında bilinir; statik kabuğu bekletmesin */}
       <Suspense fallback={null}>
         <VisitTracker />
+        <HedisDialog />
       </Suspense>
     </>
   );

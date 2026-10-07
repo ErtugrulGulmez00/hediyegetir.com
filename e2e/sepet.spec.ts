@@ -1,14 +1,13 @@
 import { expect, test } from "@playwright/test";
+import { hatadaDus, hedisGorulmus } from "./yardim";
 
 test.beforeEach(async ({ page }) => {
-  // Tarayıcı hatası (ör. hydration, persist) testi düşürsün
-  page.on("pageerror", (err) => {
-    throw err;
-  });
+  hatadaDus(page);
+  await hedisGorulmus(page);
 });
 
 test("mağazadan ürün seç → sepete ekle → WhatsApp linki ürünü içeriyor", async ({ page }) => {
-  await page.goto("/magaza");
+  await page.goto("/");
   // Tükenmiş ürünler sepete eklenemez; stokta olan ilk ürünü seç
   const firstCard = page.locator("article").filter({ hasNotText: "şu an tükendi" }).first();
   const name = (await firstCard.locator("h3").innerText()).trim();

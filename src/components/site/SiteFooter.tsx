@@ -1,6 +1,7 @@
 import { cacheLife } from "next/cache";
 import Link from "next/link";
 import { getSettings } from "@/lib/catalog";
+import { HedisOpenButton } from "@/components/hedis/HedisDialog";
 import { GiftIcon } from "@/components/ui/Logo";
 
 export async function SiteFooter() {
@@ -26,8 +27,8 @@ export async function SiteFooter() {
         </div>
         <nav aria-label="Alt menü" className="flex flex-col gap-1.5">
           <span className="font-el text-xl text-murekkep">Gezin</span>
-          <Link href="/" className="hover:underline">Hediş&apos;e sor</Link>
-          <Link href="/magaza" className="hover:underline">Mağaza</Link>
+          <Link href="/" className="hover:underline">Mağaza</Link>
+          <HedisOpenButton className="text-left hover:underline">Hediş&apos;e sor</HedisOpenButton>
           <Link href="/sepet" className="hover:underline">Sepet</Link>
         </nav>
         <div className="flex flex-col gap-1.5">

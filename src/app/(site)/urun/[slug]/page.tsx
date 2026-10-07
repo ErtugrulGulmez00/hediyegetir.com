@@ -76,13 +76,13 @@ async function ProductDetails({ params }: Pick<PageProps<"/urun/[slug]">, "param
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
       <nav aria-label="Sayfa yolu" className="mb-6 text-sm text-murekkep-soluk">
-        <Link href="/magaza" className="hover:text-murekkep hover:underline">
+        <Link href="/" className="hover:text-murekkep hover:underline">
           Mağaza
         </Link>
         {product.category && (
           <>
             <span aria-hidden className="mx-2">/</span>
-            <Link href={`/magaza?kategori=${product.category.slug}`} className="hover:text-murekkep hover:underline">
+            <Link href={`/?kategori=${product.category.slug}#urunler`} className="hover:text-murekkep hover:underline">
               {product.category.name}
             </Link>
           </>

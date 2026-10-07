@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { hedisGorulmus } from "./yardim";
 
 // Çalıştırmak için: E2E_ADMIN_PASSWORD="..." npm run test:e2e
 const USER = process.env.E2E_ADMIN_USER || "admin";
@@ -11,7 +12,7 @@ const PNG = Buffer.from(
 );
 
 test.describe.configure({ mode: "serial" });
-test.skip(({ isMobile }) => isMobile, "Admin akışı masaüstünde test edilir");
+test.beforeEach(async ({ page }) => hedisGorulmus(page));
 
 async function login(page: Page) {
   await page.goto("/admin/giris");
@@ -58,7 +59,7 @@ test.describe("girişli", () => {
     await expect(page.getByText("Kaydedildi.")).toBeVisible();
     await expect(page.getByRole("radio", { name: "Kadın" })).toBeChecked();
 
-    await page.goto("/magaza?butce=0-500");
+    await page.goto("/?butce=0-500");
     await expect(page.getByRole("heading", { name })).toBeVisible();
 
     await page.goto("/admin/urunler?q=E2E");
@@ -66,7 +67,7 @@ test.describe("girişli", () => {
     page.once("dialog", (d) => d.accept());
     await page.getByRole("button", { name: "Ürünü sil" }).click();
     await expect(page.getByText("Ürün silindi.")).toBeVisible();
-    await page.goto("/magaza");
+    await page.goto("/");
     await expect(page.getByRole("heading", { name })).toHaveCount(0);
   });
 

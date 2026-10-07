@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { HedisProduct, HedisResponse } from "@/app/api/hedis/oneri/route";
@@ -37,7 +36,7 @@ function writeLast(recipient: string) {
 
 const genderLabel = (g: GenderAnswer) => (g === "KADIN" ? "Kadın" : g === "ERKEK" ? "Erkek" : "Fark etmez");
 
-export function HedisChat() {
+export function HedisChat({ onBrowseShop }: { onBrowseShop: () => void }) {
   const reduce = useReducedMotion();
   const [step, setStep] = useState<Step>("recipient");
   const [answers, setAnswers] = useState<Answers>({});
@@ -150,10 +149,10 @@ export function HedisChat() {
   const greeting = returning ? MSG.greetingReturning(returning.recipient) : MSG.greeting;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[17rem_1fr] lg:gap-12">
+    <div className="grid gap-6 lg:grid-cols-[12rem_1fr] lg:gap-10">
       {/* Maskot: masaüstünde solda sabit */}
       <div className="flex items-end gap-4 lg:sticky lg:top-6 lg:block lg:self-start">
-        <Mascot mood={mood} bumpKey={step} className="size-28 shrink-0 sm:size-36 lg:size-56" />
+        <Mascot mood={mood} bumpKey={step} className="size-24 shrink-0 sm:size-28 lg:size-44" />
         <p className="pb-3 font-el text-2xl leading-tight text-murekkep-soluk lg:mt-4 lg:pb-0">
           Hediş, <br className="hidden lg:block" />
           hediye bulma asistanın
@@ -167,9 +166,9 @@ export function HedisChat() {
               <p>{greeting}</p>
               <p className="mt-2 text-sm text-murekkep-soluk">
                 Kendin bakmayı mı tercih edersin?{" "}
-                <Link href="/magaza" className="link-el font-semibold text-murekkep">
-                  Mağazaya geç
-                </Link>
+                <button type="button" onClick={onBrowseShop} className="link-el font-semibold text-murekkep">
+                  Ürünlere göz at
+                </button>
               </p>
             </HedisNote>
           </li>
@@ -294,7 +293,7 @@ export function HedisChat() {
               )}
 
               {step === "results" && recipient && result && (
-                <Results recipient={recipient} result={result} questionRef={questionRef} onRestart={restart} />
+                <Results recipient={recipient} result={result} questionRef={questionRef} onRestart={restart} onBrowseShop={onBrowseShop} />
               )}
             </motion.section>
           </AnimatePresence>
@@ -375,11 +374,13 @@ function Results({
   result,
   questionRef,
   onRestart,
+  onBrowseShop,
 }: {
   recipient: Recipient;
   result: HedisResponse;
   questionRef: React.Ref<HTMLHeadingElement>;
   onRestart: () => void;
+  onBrowseShop: () => void;
 }) {
   const n = result.products.length;
   return (
@@ -400,9 +401,9 @@ function Results({
       )}
 
       <div className="mt-12 flex flex-wrap items-center gap-3 border-t-2 border-dashed border-kraft-koyu pt-6">
-        <Link href="/magaza" className="btn btn-ana">
+        <button type="button" onClick={onBrowseShop} className="btn btn-ana">
           Diğer ürünlere göz at →
-        </Link>
+        </button>
         <button type="button" className="btn btn-ikincil" onClick={onRestart}>
           Baştan başla
         </button>

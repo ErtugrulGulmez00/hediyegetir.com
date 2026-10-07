@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { CartProduct } from "@/app/api/sepet/urunler/route";
+import { HedisOpenButton } from "@/components/hedis/HedisDialog";
 import { QtyStepper } from "@/components/site/AddToCart";
 import { NotePaper } from "@/components/ui/NotePaper";
 import { Tape } from "@/components/ui/Tape";
@@ -73,10 +74,8 @@ export function CartView({
           <p className="font-el text-2xl">Sepetin şimdilik boş.</p>
           <p className="mt-2">Ne alacağını bilmiyorsan Hediş yardım etsin, ya da rafları kendin gez.</p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Link href="/" className="btn btn-ana">
-              Hediş&apos;e sor
-            </Link>
-            <Link href="/magaza" className="btn btn-ikincil">
+            <HedisOpenButton className="btn btn-ana">Hediş&apos;e sor</HedisOpenButton>
+            <Link href="/" className="btn btn-ikincil">
               Mağazaya git
             </Link>
           </div>
@@ -160,7 +159,7 @@ export function CartView({
             );
           })}
         </ul>
-        <Link href="/magaza" className="link-el mt-6 inline-block font-semibold">
+        <Link href="/" className="link-el mt-6 inline-block font-semibold">
           ← Alışverişe devam et
         </Link>
       </div>

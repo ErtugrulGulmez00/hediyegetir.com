@@ -4,6 +4,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  // Mağaza ana sayfaya taşındı; eski linkler (filtreler dahil) kırılmasın
+  async redirects() {
+    return [{ source: "/magaza", destination: "/", permanent: true }];
+  },
   images: {
     qualities: [75],
     remotePatterns: [

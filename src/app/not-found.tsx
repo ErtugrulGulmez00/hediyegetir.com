@@ -13,11 +13,8 @@ export default function NotFound() {
           <h1 className="mt-1 text-3xl">Bu paket adrese ulaşamadı.</h1>
           <p className="mt-3">Aradığın sayfa taşınmış ya da hiç var olmamış olabilir.</p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/magaza" className="btn btn-ana">
+            <Link href="/" className="btn btn-ana">
               Mağazaya dön
-            </Link>
-            <Link href="/" className="btn btn-ikincil">
-              Hediş&apos;e sor
             </Link>
           </div>
         </NotePaper>

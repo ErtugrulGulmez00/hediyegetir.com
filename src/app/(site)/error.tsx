@@ -15,7 +15,7 @@ export default function SiteError({ error, retry }: { error: Error & { digest?: 
           <button type="button" className="btn btn-ana" onClick={() => retry()}>
             Tekrar dene
           </button>
-          <Link href="/magaza" className="btn btn-ikincil">
+          <Link href="/" className="btn btn-ikincil">
             Mağazaya dön
           </Link>
         </div>
