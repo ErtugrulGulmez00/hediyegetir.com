@@ -1,0 +1,108 @@
+import { expect, test, type Page } from "@playwright/test";
+
+// Çalıştırmak için: E2E_ADMIN_PASSWORD="..." npm run test:e2e
+const USER = process.env.E2E_ADMIN_USER || "admin";
+const PASSWORD = process.env.E2E_ADMIN_PASSWORD;
+
+// 1x1 PNG
+const PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);
+
+test.describe.configure({ mode: "serial" });
+test.skip(({ isMobile }) => isMobile, "Admin akışı masaüstünde test edilir");
+
+async function login(page: Page) {
+  await page.goto("/admin/giris");
+  await page.getByLabel("Kullanıcı adı").fill(USER);
+  await page.getByLabel("Şifre").fill(PASSWORD!);
+  await page.getByRole("button", { name: "Giriş yap" }).click();
+  await expect(page.getByRole("heading", { name: "Merhaba" })).toBeVisible();
+}
+
+test("oturumsuz erişim engellenir", async ({ page, request }) => {
+  await page.goto("/admin/urunler");
+  await expect(page).toHaveURL(/\/admin\/giris$/);
+  const res = await request.post("/api/admin/upload-local");
+  expect(res.status()).toBe(401);
+});
+
+test("hatalı şifre reddedilir", async ({ browser }) => {
+  // Her çalıştırmada farklı "IP" ki deneme sınırına takılmasın
+  const ctx = await browser.newContext({ extraHTTPHeaders: { "x-forwarded-for": `10.0.0.${Date.now() % 250}` } });
+  const page = await ctx.newPage();
+  await page.goto("/admin/giris");
+  await page.getByLabel("Kullanıcı adı").fill(USER);
+  await page.getByLabel("Şifre").fill("yanlis-sifre-123");
+  await page.getByRole("button", { name: "Giriş yap" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: /hatalı/ })).toBeVisible();
+  await ctx.close();
+});
+
+test.describe("girişli", () => {
+  test.skip(!PASSWORD, "E2E_ADMIN_PASSWORD tanımlı değil");
+
+  test("fotoğraflı yeni ürün ekle → mağazada görünür → sil", async ({ page }) => {
+    await login(page);
+    const name = `E2E Test Ürünü ${Date.now()}`;
+    await page.goto("/admin/urunler/yeni");
+    await page.getByLabel("Ürün adı").fill(name);
+    await page.getByLabel("Satış fiyatı (₺)").fill("349,90");
+    await page.locator('input[type="file"]').setInputFiles({ name: "deneme foto.png", mimeType: "image/png", buffer: PNG });
+    await expect(page.getByText("kapak", { exact: true })).toBeVisible();
+    await expect(page.getByText("yükleniyor…")).toHaveCount(0);
+    await page.getByRole("button", { name: "Tüm kadınlar" }).click();
+    await page.getByRole("button", { name: "Kahve & çay" }).click();
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(page.getByText("Kaydedildi.")).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Kadın" })).toBeChecked();
+
+    await page.goto("/magaza?butce=0-500");
+    await expect(page.getByRole("heading", { name })).toBeVisible();
+
+    await page.goto("/admin/urunler?q=E2E");
+    await page.getByRole("link", { name }).click();
+    page.once("dialog", (d) => d.accept());
+    await page.getByRole("button", { name: "Ürünü sil" }).click();
+    await expect(page.getByText("Ürün silindi.")).toBeVisible();
+    await page.goto("/magaza");
+    await expect(page.getByRole("heading", { name })).toHaveCount(0);
+  });
+
+  test("ikas ürününde değişen alan kilitlenir, kilidi açılabilir", async ({ page }) => {
+    await login(page);
+    await page.goto("/admin/urunler?durum=ikas");
+    const link = page.locator("main a[href^='/admin/urunler/c']").first();
+    const original = (await link.innerText()).trim();
+    await link.click();
+
+    await page.getByLabel("Ürün adı").fill(`${original} (düzenlendi)`);
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(page.getByText("Kaydedildi.")).toBeVisible();
+    await expect(page.getByText("Ad: kilidi aç")).toBeVisible();
+
+    // Geri al: adı eski haline getir ve kilidi aç
+    await page.getByLabel("Ürün adı").fill(original);
+    await page.getByLabel("Ad: kilidi aç").check();
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(page.getByText("Kaydedildi.")).toBeVisible();
+    await expect(page.getByText("Ad: kilidi aç")).toHaveCount(0);
+  });
+
+  test("ayarlar: WhatsApp numarası normalize edilir", async ({ page }) => {
+    await login(page);
+    await page.goto("/admin/ayarlar");
+    const input = page.getByLabel("WhatsApp numarası");
+    const before = await input.inputValue();
+    await input.fill("12");
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(page.getByRole("alert").filter({ hasText: /geçersiz/ })).toBeVisible();
+    await input.fill("0505 043 47 96");
+    await page.getByRole("button", { name: "Kaydet" }).click();
+    await expect(page.getByRole("status")).toHaveText("Kaydedildi.");
+    await page.reload();
+    await expect(page.getByLabel("WhatsApp numarası")).toHaveValue("905050434796");
+    expect(before === "" || before === "905050434796").toBe(true);
+  });
+});

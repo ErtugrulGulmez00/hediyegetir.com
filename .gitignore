@@ -50,3 +50,6 @@ next-env.d.ts
 # playwright
 /test-results
 /playwright-report
+
+# yerel admin yüklemeleri (Blob anahtarı yokken)
+/public/uploads
