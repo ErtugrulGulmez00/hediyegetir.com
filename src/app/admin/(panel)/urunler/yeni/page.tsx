@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { aiConfigured } from "@/lib/ai/product-vision";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { PageTitle } from "../../ui";
@@ -40,7 +41,7 @@ export default async function NewProductPage() {
         }}
         categories={categories}
         blobEnabled={!!process.env.BLOB_READ_WRITE_TOKEN}
-        aiEnabled={!!process.env.OPENROUTER_API_KEY}
+        aiEnabled={aiConfigured()}
       />
     </>
   );

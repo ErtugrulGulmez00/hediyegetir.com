@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { AiError, askVisionModel, buildPrompt, DEFAULT_AI_MODEL, parseAiSuggestion, type AiSuggestion } from "@/lib/ai/product-vision";
+import { AiError, aiConfigured, askVisionModel, buildPrompt, DEFAULT_AI_MODEL, parseAiSuggestion, type AiSuggestion } from "@/lib/ai/product-vision";
 import { adminOrNull } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -29,8 +29,7 @@ async function toDataUrl(imageUrl: string): Promise<string> {
 
 export async function POST(request: Request): Promise<Response> {
   if (!(await adminOrNull())) return Response.json({ error: "Oturum gerekli" }, { status: 401 });
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) return Response.json({ error: "OPENROUTER_API_KEY tanımlı değil" } satisfies AiOneriResponse, { status: 503 });
+  if (!aiConfigured()) return Response.json({ error: "Yapay zeka anahtarı tanımlı değil" } satisfies AiOneriResponse, { status: 503 });
 
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Geçersiz istek" } satisfies AiOneriResponse, { status: 400 });
@@ -41,7 +40,6 @@ export async function POST(request: Request): Promise<Response> {
       db.category.findMany({ select: { id: true, name: true }, orderBy: { sortOrder: "asc" } }),
     ]);
     const { text, model } = await askVisionModel({
-      apiKey,
       model: settings?.aiModel || DEFAULT_AI_MODEL,
       prompt: buildPrompt(categories),
       imageUrl: await toDataUrl(parsed.data.imageUrl),

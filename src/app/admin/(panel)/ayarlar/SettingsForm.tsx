@@ -24,18 +24,16 @@ export function SettingsForm({
         <input name="instagramUrl" defaultValue={initial.instagramUrl} placeholder="https://instagram.com/hesabin" className={inputClass} />
       </Field>
       <Field
-        label="Yapay zeka modeli (OpenRouter)"
+        label="Yapay zeka modeli"
         hint={
           aiEnabled ? (
             <>
-              Ürün fotoğrafından öneri üreten model; görüntü destekli olmalı. Ücretsiz modeller &quot;:free&quot; ile biter, yavaş ve
-              sık meşguldür. OpenRouter&apos;a kredi yükleyince buradan ücretli bir modele geçebilirsin.{" "}
-              <a href="https://openrouter.ai/models?input_modalities=image" target="_blank" rel="noopener" className="underline">
-                Görüntü destekli modeller
-              </a>
+              Ürün fotoğrafından öneri üreten model; görüntü destekli olmalı. Varsayılan gpt-6-luna (OpenAI, ≈3 sn,
+              fotoğraf başına ≈0,00015 $). Adında &quot;/&quot; olan modeller OpenRouter üzerinden çağrılır (ör.
+              google/gemma-4-31b-it:free).
             </>
           ) : (
-            "OPENROUTER_API_KEY tanımlı olmadığı için bu özellik kapalı."
+            "OPENAI_API_KEY ya da OPENROUTER_API_KEY tanımlı olmadığı için bu özellik kapalı."
           )
         }
       >

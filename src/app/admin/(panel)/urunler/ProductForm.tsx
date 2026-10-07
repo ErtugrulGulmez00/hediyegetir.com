@@ -45,7 +45,7 @@ export function ProductForm({
   initial: ProductFormInitial;
   categories: { id: string; name: string }[];
   blobEnabled: boolean;
-  /** OpenRouter anahtarı tanımlıysa fotoğraftan öneri özelliği açılır */
+  /** Yapay zeka anahtarı tanımlıysa fotoğraftan öneri özelliği açılır */
   aiEnabled: boolean;
 }) {
   const [v, setV] = useState(initial);
@@ -347,7 +347,7 @@ export function ProductForm({
               className={`min-w-0 flex-1 text-sm ${ai.status === "error" ? "font-semibold text-kiremit-koyu" : "text-murekkep-soluk"}`}
             >
               {ai.status === "idle" && "Kapak fotoğrafından ad, açıklama, kategori ve Hediş etiketi önerir; yalnızca boş alanları doldurur."}
-              {ai.status === "running" && "Yapay zeka kapak fotoğrafına bakıyor… Ücretsiz modelde 30 saniye kadar sürebilir; bu sırada formu doldurmaya devam edebilirsin."}
+              {ai.status === "running" && "Yapay zeka kapak fotoğrafına bakıyor… Genelde birkaç saniye sürer; bu sırada formu doldurmaya devam edebilirsin."}
               {(ai.status === "done" || ai.status === "error") && ai.message}
             </p>
           </div>

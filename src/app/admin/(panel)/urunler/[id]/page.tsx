@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { aiConfigured } from "@/lib/ai/product-vision";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Flash, PageTitle } from "../../ui";
@@ -52,7 +53,7 @@ export default async function EditProductPage(props: PageProps<"/admin/urunler/[
         initial={initial}
         categories={categories}
         blobEnabled={!!process.env.BLOB_READ_WRITE_TOKEN}
-        aiEnabled={!!process.env.OPENROUTER_API_KEY}
+        aiEnabled={aiConfigured()}
       />
     </>
   );

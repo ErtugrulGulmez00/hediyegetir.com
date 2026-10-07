@@ -51,7 +51,8 @@ Admin paneli: http://localhost:3000/admin
    | `ADMIN_PASSWORD_HASH` | `npm run hash-password -- "şifre"` çıktısındaki ilk satır (Vercel'de `$` kaçışı **gerekmez**) |
    | `AUTH_SECRET` | 32+ karakter rastgele dize |
    | `VISITOR_SALT` | rastgele dize |
-   | `OPENROUTER_API_KEY` | (isteğe bağlı) admin'de fotoğraftan ad/kategori/Hediş etiketi önerisi; model *Ayarlar*'dan seçilir |
+   | `OPENAI_API_KEY` | (isteğe bağlı) admin'de fotoğraftan ad/kategori/Hediş etiketi önerisi; varsayılan model `gpt-6-luna`, *Ayarlar*'dan değiştirilebilir |
+   | `OPENROUTER_API_KEY` | (isteğe bağlı) Ayarlar'da adında `/` olan bir model seçilirse kullanılır |
 
 5. **Deploy** et. İlk deploy migration'ları uygular.
 6. **Ürünleri taşı (bir kez):** Yerel veritabanındaki ürünler, kategoriler ve ayarlar yayına bu bilgisayardan taşınır; fotoğraflar Blob'a yüklenir.

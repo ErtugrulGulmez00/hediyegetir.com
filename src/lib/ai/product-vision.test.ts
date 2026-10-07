@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPrompt, parseAiSuggestion } from "./product-vision";
+import { buildPrompt, parseAiSuggestion, providerOf } from "./product-vision";
 
 const cats = [
   { id: "c1", name: "Çanta" },
@@ -56,5 +56,13 @@ describe("buildPrompt", () => {
     expect(p).toContain("Çanta, Kadın Giyim (Handmade)");
     expect(p).toContain("kiz-kardes");
     expect(p).toContain("kahve-cay");
+  });
+});
+
+describe("providerOf", () => {
+  it("adında / olmayan modeller OpenAI, olanlar OpenRouter", () => {
+    expect(providerOf("gpt-6-luna")).toBe("openai");
+    expect(providerOf("google/gemma-4-31b-it:free")).toBe("openrouter");
+    expect(providerOf("~deepseek/deepseek-flash-latest")).toBe("openrouter");
   });
 });

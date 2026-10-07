@@ -1,11 +1,12 @@
-// Ürün fotoğrafından ad, kategori, açıklama ve Hediş etiketi önerisi (OpenRouter, görüntü destekli model).
+// Ürün fotoğrafından ad, kategori, açıklama ve Hediş etiketi önerisi (OpenAI ya da OpenRouter, görüntü destekli model).
 // İstem ve cevap ayrıştırma saf fonksiyonlardır; ağ çağrısı ayrı.
 import { z } from "zod";
 import { HOBBIES, RECIPIENTS, type GenderKey } from "../hedis/config";
 
-export const DEFAULT_AI_MODEL = "dots-studio/dots-3-note-preview:free";
+// Hız/maliyet/Türkçe kalite karşılaştırmasında en iyisi (≈2,7 sn, ≈0,00015 $ / fotoğraf)
+export const DEFAULT_AI_MODEL = "gpt-6-luna";
 
-/** Ücretsiz modeller sık sık meşgul olur; OpenRouter bunları sırayla dener. */
+/** OpenRouter ücretsiz modelleri sık sık meşgul olur; OpenRouter bunları sırayla dener. */
 const FREE_FALLBACKS = ["dots-studio/dots-3-note-preview:free", "google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free"];
 
 export type Category = { id: string; name: string };
@@ -111,58 +112,100 @@ export function parseAiSuggestion(text: string, categories: Category[]): AiSugge
 
 export class AiError extends Error {}
 
+export type AiProvider = "openai" | "openrouter";
+
+/** Model adında "/" varsa OpenRouter (ör. "google/gemma-4-31b-it:free"), yoksa doğrudan OpenAI (ör. "gpt-6-luna"). */
+export function providerOf(model: string): AiProvider {
+  return model.includes("/") ? "openrouter" : "openai";
+}
+
+/** Sağlayıcının anahtarı ortamda tanımlı mı? */
+export function apiKeyFor(provider: AiProvider): string | undefined {
+  return provider === "openai" ? process.env.OPENAI_API_KEY : process.env.OPENROUTER_API_KEY;
+}
+
+/** Herhangi bir yapay zeka anahtarı varsa admin'de öneri özelliği açılır. */
+export const aiConfigured = () => !!(process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY);
+
+/**
+ * OpenAI akıl yürütme modellerinde düşünme süresini kapatır (bu iş için gereksiz, yalnızca yavaşlatır).
+ * İlk GPT-5 ailesi "minimal", sonrakiler "none" kabul eder.
+ */
+function reasoningEffort(model: string): string | undefined {
+  if (/^gpt-5-(nano|mini)|^gpt-5$/.test(model)) return "minimal";
+  if (/^gpt-(5\.|6)/.test(model)) return "none";
+  return undefined;
+}
+
 /** Görseli modele gönderir, ham metin cevabı döner. imageUrl: https adresi ya da data: URL. */
 export async function askVisionModel(opts: {
-  apiKey: string;
   model: string;
   prompt: string;
   imageUrl: string;
   timeoutMs?: number;
 }): Promise<{ text: string; model: string }> {
-  const models = opts.model.endsWith(":free")
-    ? [opts.model, ...FREE_FALLBACKS.filter((m) => m !== opts.model)]
-    : [opts.model];
+  const provider = providerOf(opts.model);
+  const apiKey = apiKeyFor(provider);
+  if (!apiKey) throw new AiError(provider === "openai" ? "OPENAI_API_KEY tanımlı değil" : "OPENROUTER_API_KEY tanımlı değil");
+
+  const content = [
+    { type: "text", text: opts.prompt },
+    // "low": görsel 512 px'e küçültülür; kategori/etiket için yeterli, daha hızlı ve ucuz
+    { type: "image_url", image_url: { url: opts.imageUrl, detail: "low" } },
+  ];
+  let url: string;
+  let headers: Record<string, string>;
+  let body: Record<string, unknown>;
+
+  if (provider === "openai") {
+    url = "https://api.openai.com/v1/chat/completions";
+    headers = { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" };
+    const effort = reasoningEffort(opts.model);
+    body = {
+      model: opts.model,
+      response_format: { type: "json_object" },
+      messages: [{ role: "user", content }],
+      ...(effort ? { reasoning_effort: effort } : { temperature: 0.2 }),
+    };
+  } else {
+    url = "https://openrouter.ai/api/v1/chat/completions";
+    headers = {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://hediyegetir.com",
+      "X-Title": "hediyegetir",
+    };
+    const models = opts.model.endsWith(":free")
+      ? [opts.model, ...FREE_FALLBACKS.filter((m) => m !== opts.model)]
+      : [opts.model];
+    body = { model: models[0], models, temperature: 0.2, messages: [{ role: "user", content }] };
+  }
+
   let res: Response;
   try {
-    res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    res = await fetch(url, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${opts.apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://hediyegetir.com",
-        "X-Title": "hediyegetir",
-      },
-      body: JSON.stringify({
-        model: models[0],
-        models,
-        temperature: 0.2,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: opts.prompt },
-              { type: "image_url", image_url: { url: opts.imageUrl } },
-            ],
-          },
-        ],
-      }),
-      signal: AbortSignal.timeout(opts.timeoutMs ?? 90_000),
+      headers,
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(opts.timeoutMs ?? (provider === "openai" ? 30_000 : 90_000)),
     });
   } catch (e) {
-    throw new AiError(e instanceof Error && e.name === "TimeoutError" ? "Model zamanında yanıt vermedi" : "OpenRouter'a ulaşılamadı");
+    throw new AiError(e instanceof Error && e.name === "TimeoutError" ? "Model zamanında yanıt vermedi" : "Yapay zeka servisine ulaşılamadı");
   }
   const json = (await res.json().catch(() => null)) as {
     model?: string;
     choices?: { message?: { content?: string } }[];
-    error?: { message?: string; code?: number };
+    error?: { message?: string; code?: number | string };
   } | null;
   const text = json?.choices?.[0]?.message?.content;
   if (!res.ok || !text) {
     const msg = json?.error?.message ?? `HTTP ${res.status}`;
-    if (res.status === 429 || /rate-limit|temporarily/i.test(msg)) throw new AiError("Ücretsiz modeller şu an meşgul, birazdan tekrar dene");
-    if (res.status === 401) throw new AiError("OpenRouter anahtarı geçersiz");
-    if (res.status === 402) throw new AiError("OpenRouter kredisi yetersiz");
+    if (res.status === 401) throw new AiError("Yapay zeka anahtarı geçersiz");
+    if (res.status === 402 || /insufficient_quota|exceeded your current quota|credit/i.test(msg))
+      throw new AiError("Yapay zeka hesabında bakiye kalmadı");
+    if (res.status === 429 || /rate-limit|temporarily/i.test(msg)) throw new AiError("Model şu an meşgul, birazdan tekrar dene");
+    if (res.status === 404 || /model.*(not exist|not found)/i.test(msg)) throw new AiError(`"${opts.model}" modeli bulunamadı; Ayarlar'dan kontrol et`);
     throw new AiError(`Model yanıt veremedi (${msg.slice(0, 120)})`);
   }
-  return { text, model: json?.model ?? models[0] };
+  return { text, model: json?.model ?? opts.model };
 }

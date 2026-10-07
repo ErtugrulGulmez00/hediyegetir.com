@@ -188,7 +188,8 @@ const SettingsInput = z.object({
     .string()
     .trim()
     .transform((m) => m || DEFAULT_AI_MODEL)
-    .refine((m) => /^~?[\w.-]+\/[\w.:-]+$/.test(m), "Model adı şu biçimde olmalı: saglayici/model-adi"),
+    // OpenAI: "gpt-6-luna"; OpenRouter: "saglayici/model-adi"
+    .refine((m) => /^~?[\w.-]+(\/[\w.:-]+)?$/.test(m), "Geçersiz model adı (ör. gpt-6-luna ya da saglayici/model-adi)"),
 });
 
 export async function saveSettingsAction(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
