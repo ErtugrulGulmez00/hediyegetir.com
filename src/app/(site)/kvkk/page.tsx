@@ -28,7 +28,7 @@ const STORAGE_ROWS = [
 
 export default function KvkkPage() {
   return (
-    <article className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+    <article className="sayfa pt-6">
       <h1 className="text-4xl sm:text-5xl">
         <Scribble>KVKK</Scribble> ve çerezler
       </h1>

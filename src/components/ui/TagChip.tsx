@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 const base =
   "relative inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap border-[1.5px] border-murekkep py-1.5 pr-3.5 pl-6 text-[0.95rem] font-semibold transition-[background-color,transform] duration-150 select-none";
 const shape = { clipPath: "polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%)" } as const;
@@ -23,31 +21,5 @@ export function TagChip({
       <Hole />
       {children}
     </button>
-  );
-}
-
-/** Aynı görünüm, bağlantı olarak (mağaza filtreleri searchParams ile çalışır). */
-export function TagLink({
-  active = false,
-  href,
-  children,
-  className = "",
-}: {
-  active?: boolean;
-  href: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      scroll={false}
-      aria-current={active ? "true" : undefined}
-      className={`${base} ${tone(active)} ${className}`}
-      style={shape}
-    >
-      <Hole />
-      {children}
-    </Link>
   );
 }

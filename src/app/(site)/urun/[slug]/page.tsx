@@ -33,7 +33,7 @@ export async function generateMetadata(props: PageProps<"/urun/[slug]">): Promis
 
 export default function ProductPage(props: PageProps<"/urun/[slug]">) {
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6">
+    <div className="sayfa pt-4">
       <Suspense fallback={<ProductSkeleton />}>
         <ProductDetails params={props.params} />
       </Suspense>

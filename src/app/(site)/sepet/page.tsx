@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default async function CartPage() {
   const settings = await getSettings();
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+    <div className="sayfa pt-6">
       <h1 className="text-4xl sm:text-5xl">
         <Scribble>Sepetin</Scribble>
       </h1>

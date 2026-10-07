@@ -2,6 +2,9 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { hedisGorulmus } from "./yardim";
 
+// Kontrast animasyonun ortasında (yarı saydamken) ölçülmesin; "hareketi azalt" modu da böylece test edilir
+test.use({ reducedMotion: "reduce" });
+
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const PAGES = ["/", "/urun/handmade-kol-cantasi", "/sepet", "/kvkk", "/olmayan-sayfa", "/admin/giris"];
 

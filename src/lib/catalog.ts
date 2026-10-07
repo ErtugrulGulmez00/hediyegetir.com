@@ -3,20 +3,19 @@ import { cacheLife, cacheTag } from "next/cache";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "./db";
 import { budgetByKey, type BudgetKey } from "./hedis/config";
+import type { Filters, SortKey } from "./shop-filters";
 
 // Katalog okumaları önbellekli. Admin'deki değişiklikler updateTag(CATALOG_TAG) ile hemen tazeler;
 // veritabanına doğrudan yapılan değişiklikler (ör. urun-aktar betiği) en geç bir saatte görünür.
 export const CATALOG_TAG = "katalog";
 export const SETTINGS_TAG = "ayarlar";
 
-export const SORTS = {
-  onerilen: { label: "Önerilen", orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }] },
-  yeni: { label: "En yeni", orderBy: [{ createdAt: "desc" }] },
-  "fiyat-artan": { label: "Fiyat: artan", orderBy: [{ priceKurus: "asc" }] },
-  "fiyat-azalan": { label: "Fiyat: azalan", orderBy: [{ priceKurus: "desc" }] },
-} satisfies Record<string, { label: string; orderBy: Prisma.ProductOrderByWithRelationInput[] }>;
-export type SortKey = keyof typeof SORTS;
-export const isSortKey = (s: unknown): s is SortKey => typeof s === "string" && s in SORTS;
+const SORT_ORDER: Record<SortKey, Prisma.ProductOrderByWithRelationInput[]> = {
+  onerilen: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+  yeni: [{ createdAt: "desc" }],
+  "fiyat-artan": [{ priceKurus: "asc" }],
+  "fiyat-azalan": [{ priceKurus: "desc" }],
+};
 
 const cardSelect = {
   id: true,
@@ -47,11 +46,11 @@ export async function getCategories() {
   return db.category.findMany({
     where: { products: { some: { isActive: true } } },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, _count: { select: { products: { where: { isActive: true } } } } },
   });
 }
 
-export async function getShopProducts(filters: { category?: string; budget?: BudgetKey; sort: SortKey }) {
+export async function getShopProducts(filters: Filters) {
   "use cache";
   cacheTag(CATALOG_TAG);
   cacheLife("hours");
@@ -61,7 +60,7 @@ export async function getShopProducts(filters: { category?: string; budget?: Bud
       ...(filters.category ? { category: { slug: filters.category } } : {}),
       ...(filters.budget ? { priceKurus: priceWhere(filters.budget) } : {}),
     },
-    orderBy: SORTS[filters.sort].orderBy,
+    orderBy: SORT_ORDER[filters.sort],
     select: cardSelect,
   });
 }

@@ -5,7 +5,7 @@ import { NotePaper } from "@/components/ui/NotePaper";
 
 export default function SiteError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-10 sm:px-6">
+    <div className="sayfa pt-10">
       <NotePaper className="max-w-md" lined tilt={-0.8} tape="kraft">
         <p className="font-el text-xl text-kiremit-koyu">kurdele düğüm oldu</p>
         <h1 className="mt-1 text-3xl">Bir şeyler ters gitti.</h1>

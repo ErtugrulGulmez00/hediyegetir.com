@@ -15,7 +15,7 @@ export async function SiteFooter() {
           d="M0 24V14l18-6 22 7 25-9 19 8 28-10 21 9 30-6 17 7 26-11 24 10 20-5 29 8 23-9 18 6 31-8 22 9 19-6 27 8 24-10 20 7 28-6 21 9 26-8 18 5 30-9 22 8 25-6 19 9 27-10 23 7 20-5 29 8 21-9 24 6 18-4 28 9 22-8 26 7 19-6 30 8 21-10 25 9 20-5 23 7 27-8 19 6 24-9 22 8 30-7 18 6 26-9 21 8V24Z"
         />
       </svg>
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 pt-10 pb-8 sm:grid-cols-[1.4fr_1fr_1fr] sm:px-6">
+      <div className="sayfa grid gap-8 pt-10 pb-8 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <p className="flex items-center gap-2 font-baslik text-xl font-semibold">
             <GiftIcon className="size-7" /> hediyegetir
