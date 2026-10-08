@@ -61,6 +61,30 @@ export const HOBBIES: readonly Hobby[] = [
 
 export const MAX_HOBBIES = 3;
 
+export type Occasion = { key: string; label: string };
+
+/** Ürünün hangi özel günler için uygun olduğu (Product.occasions) */
+export const OCCASIONS: readonly Occasion[] = [
+  { key: "dogum-gunu", label: "Doğum günü" },
+  { key: "yildonumu", label: "Yıldönümü" },
+  { key: "sevgililer-gunu", label: "Sevgililer Günü" },
+  { key: "anneler-gunu", label: "Anneler Günü" },
+  { key: "babalar-gunu", label: "Babalar Günü" },
+  { key: "ogretmenler-gunu", label: "Öğretmenler Günü" },
+  { key: "yeni-is", label: "Yeni iş / terfi" },
+  { key: "mezuniyet", label: "Mezuniyet" },
+  { key: "emeklilik", label: "Emeklilik" },
+  { key: "yeni-ev", label: "Yeni ev" },
+  { key: "yeni-bebek", label: "Yeni bebek" },
+  { key: "nisan-dugun", label: "Nişan / düğün" },
+  { key: "gecmis-olsun", label: "Geçmiş olsun" },
+  { key: "tesekkur", label: "Teşekkür" },
+  { key: "yilbasi", label: "Yılbaşı" },
+  { key: "sebepsiz", label: "Sebepsiz, sadece sevindirmek için" },
+] as const;
+
+export const occasionByKey = (key: string) => OCCASIONS.find((o) => o.key === key);
+
 export type BudgetKey = "0-500" | "500-1000" | "1000+";
 
 export type Budget = {

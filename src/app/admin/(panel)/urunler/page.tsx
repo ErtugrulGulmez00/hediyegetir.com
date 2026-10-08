@@ -6,7 +6,9 @@ import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/money";
 import { Badge, Flash, inputClass, PageTitle } from "../ui";
+import { aiConfigured } from "@/lib/ai/client";
 import { ActiveToggle } from "./ActiveToggle";
+import { EnrichButton } from "./EnrichButton";
 
 export const metadata: Metadata = { title: "Ürünler" };
 
@@ -25,6 +27,9 @@ export default async function AdminProducts(props: PageProps<"/admin/urunler">) 
   const q = one(sp.q).trim();
   const durum: FilterKey = one(sp.durum) in FILTERS ? (one(sp.durum) as FilterKey) : "hepsi";
 
+  const missingAi = aiConfigured()
+    ? await db.product.count({ where: { OR: [{ occasions: { isEmpty: true } }, { tags: { isEmpty: true } }, { features: { isEmpty: true } }] } })
+    : 0;
   const products = await db.product.findMany({
     where: {
       ...FILTERS[durum].where,
@@ -59,6 +64,7 @@ export default async function AdminProducts(props: PageProps<"/admin/urunler">) 
         Ürünler
       </PageTitle>
       {one(sp.silindi) && <Flash>Ürün silindi.</Flash>}
+      <EnrichButton missing={missingAi} />
 
       <form className="mb-4 flex gap-2" role="search">
         <input type="search" name="q" defaultValue={q} placeholder="Ürün adıyla ara…" className={`${inputClass} max-w-sm`} />

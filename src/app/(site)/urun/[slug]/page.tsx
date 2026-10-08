@@ -9,6 +9,7 @@ import { PriceTag } from "@/components/ui/PriceTag";
 import { RibbonDivider } from "@/components/ui/RibbonDivider";
 import { Stamp } from "@/components/ui/Stamp";
 import { getActiveProductSlugs, getProductBySlug, getRelatedProducts, getSettings } from "@/lib/catalog";
+import { occasionByKey } from "@/lib/hedis/config";
 import { absoluteUrl } from "@/lib/site";
 import { buildProductQuestion, waLink } from "@/lib/whatsapp";
 
@@ -118,6 +119,38 @@ async function ProductDetails({ params }: Pick<PageProps<"/urun/[slug]">, "param
             <div className="mt-10">
               <h2 className="font-el text-2xl font-normal text-kiremit-koyu">Bu parça hakkında</h2>
               <div className="mt-2 max-w-prose whitespace-pre-line text-murekkep/90">{product.description}</div>
+            </div>
+          )}
+
+          {product.features.length > 0 && (
+            <div className="mt-8">
+              <h2 className="font-el text-2xl font-normal text-kiremit-koyu">Öne çıkanlar</h2>
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {product.features.map((f) => (
+                  <li key={f} className="flex gap-2">
+                    <span aria-hidden className="text-kiremit">
+                      ✓
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {product.occasions.length > 0 && (
+            <div className="mt-8">
+              <h2 className="font-el text-2xl font-normal text-kiremit-koyu">Şu günler için güzel bir hediye</h2>
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {product.occasions.map((k) => {
+                  const o = occasionByKey(k);
+                  return o ? (
+                    <li key={k} className="rounded-full border-[1.5px] border-kraft-koyu/70 bg-kagit px-3 py-1 text-sm font-semibold">
+                      {o.label}
+                    </li>
+                  ) : null;
+                })}
+              </ul>
             </div>
           )}
 

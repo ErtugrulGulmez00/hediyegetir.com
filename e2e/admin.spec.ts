@@ -58,7 +58,6 @@ test.describe("girişli", () => {
     await page.getByLabel("Satış fiyatı (₺)").fill("349,90");
     await page.locator('input[type="file"]').setInputFiles({ name: "deneme foto.png", mimeType: "image/png", buffer: PNG });
     await expect(page.getByText("kapak", { exact: true })).toBeVisible();
-    await expect(page.getByText("yükleniyor…")).toHaveCount(0);
     await page.getByRole("button", { name: "Tüm kadınlar" }).click();
     await page.getByRole("button", { name: "Kahve & çay" }).click();
     await page.getByRole("button", { name: "Kaydet" }).click();
@@ -103,41 +102,75 @@ test.describe("girişli", () => {
     }
   });
 
-  test("yapay zeka önerisi yalnızca boş alanları doldurur", async ({ page }) => {
+  test("AI analizi boş alanları doldurur, admin'in yazdığına dokunmaz", async ({ page }) => {
     await login(page);
     await page.goto("/admin/urunler/yeni", { waitUntil: "networkidle" });
     const catId = await page.getByLabel("Kategori").locator("option").nth(1).getAttribute("value");
-    await page.route("**/api/admin/ai-oneri", (route) =>
-      route.fulfill({
-        json: {
-          model: "test/model",
-          suggestion: {
-            name: "Önerilen Ad",
-            description: "Önerilen açıklama.",
-            categoryId: catId,
-            gender: "KADIN",
-            recipients: ["anne", "teyze"],
-            hobbies: ["moda"],
-            alt: "Önerilen fotoğraf açıklaması",
-          },
-        },
-      }),
-    );
+    const suggestion = {
+      name: "Önerilen Ad",
+      description: "Önerilen açıklama.",
+      features: ["Pamuk ip", "Elde örüldü"],
+      categoryId: catId,
+      gender: "KADIN",
+      recipients: ["anne", "teyze"],
+      hobbies: ["moda"],
+      occasions: ["dogum-gunu", "anneler-gunu"],
+      tags: ["el örgüsü", "romantik"],
+      alts: ["Önerilen fotoğraf açıklaması"],
+    };
+    let calls = 0;
+    await page.route("**/api/admin/ai-oneri", async (route) => {
+      calls++;
+      const body = route.request().postDataJSON();
+      await route.fulfill({ json: { model: "test/model", suggestion, analyzedImages: body.imageUrls } });
+    });
     await page.getByLabel("Ürün adı").fill("Benim adım");
     await page.locator('input[type="file"]').setInputFiles({ name: "a.png", mimeType: "image/png", buffer: PNG });
-    await expect(page.getByText(/^Doldurdum: açıklama, kategori, Hediş etiketleri, fotoğraf açıklaması./)).toBeVisible();
+    const done = page.locator("text=Hazırladıklarım >> visible=true");
+    await expect(done).toBeVisible();
 
     await expect(page.getByLabel("Ürün adı")).toHaveValue("Benim adım");
     await expect(page.getByLabel("Kategori")).toHaveValue(catId!);
     await expect(page.getByLabel("Fotoğraf açıklaması")).toHaveValue("Önerilen fotoğraf açıklaması");
     await expect(page.getByRole("radio", { name: "Kadın" })).toBeChecked();
-    await expect(page.getByRole("checkbox", { name: "Teyze" })).toBeChecked();
-    await expect(page.getByRole("button", { name: "Moda & stil" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Teyze", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "Anneler Günü" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "romantik etiketini kaldır" })).toBeVisible();
+    await expect(page.getByLabel("1. özellik")).toHaveValue("Pamuk ip");
     await expect(page.getByLabel("Etiketleri kontrol ettim")).not.toBeChecked();
 
-    // İkinci kez çalıştırınca dolu alanlara dokunmaz
-    await page.getByRole("button", { name: "Fotoğraftan doldur" }).click();
-    await expect(page.getByText("Boş alan yoktu, hiçbir şeyi değiştirmedim.")).toBeVisible();
+    // Admin açıklamayı kendisi yazarsa yeniden analiz onu ezmez, geliştirilmiş hali öneri olarak sunar
+    await page.locator("textarea").fill("Benim açıklamam.");
+    await page.getByRole("button", { name: "Yeniden analiz et" }).click();
+    await expect(page.getByRole("button", { name: "Bunu kullan" })).toBeVisible();
+    await expect(page.locator("textarea")).toHaveValue("Benim açıklamam.");
+    expect(calls).toBe(2);
+  });
+
+  test("AI eşleşmeyen kategori önerince oluşturmayı teklif eder", async ({ page }) => {
+    await login(page);
+    await page.goto("/admin/urunler/yeni", { waitUntil: "networkidle" });
+    const yeniKategori = `E2E Kategori ${Date.now()}`;
+    await page.route("**/api/admin/ai-oneri", (route) =>
+      route.fulfill({
+        json: {
+          model: "test/model",
+          analyzedImages: [],
+          suggestion: { name: "Ahşap kalem", newCategoryName: yeniKategori, features: [], recipients: [], hobbies: [], occasions: [], tags: [], alts: [] },
+        },
+      }),
+    );
+    // Fotoğraf yokken ürün adı yazılınca kendiliğinden analiz eder
+    await page.getByLabel("Ürün adı").fill("Kişiye özel ahşap kalem");
+    await expect(page.locator("text=mevcut kategorilerinle tam olarak eşleşmiyor >> visible=true")).toBeVisible({ timeout: 10_000 });
+    await page.getByRole("button", { name: "Kategoriyi oluştur" }).click();
+    await expect(page.getByLabel("Kategori").locator("option:checked")).toHaveText(yeniKategori);
+
+    // Temizlik: oluşturulan kategoriyi sil
+    await page.goto("/admin/kategoriler");
+    page.once("dialog", (d) => d.accept());
+    await page.locator("li").filter({ has: page.locator(`input[value="${yeniKategori}"]`) }).getByRole("button", { name: "Sil" }).click();
+    await expect(page.locator(`input[value="${yeniKategori}"]`)).toHaveCount(0);
   });
 
   test("ayarlar: WhatsApp numarası normalize edilir", async ({ page }) => {

@@ -46,6 +46,12 @@ model Product {
   gender        Gender   @default(UNISEX)
   hobbies       String[] @default([])
   hedisReviewed Boolean  @default(false)
+  // Hangi özel günler için uygun (config.ts OCCASIONS anahtarları)
+  occasions     String[] @default([])
+  // Serbest anahtar kelimeler (küçük harf): Hediş eşleştirmesi ve arama için
+  tags          String[] @default([])
+  // Kısa ürün özellikleri (madde madde); ürün sayfasında gösterilir
+  features      String[] @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

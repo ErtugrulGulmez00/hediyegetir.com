@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { aiConfigured } from "@/lib/ai/product-vision";
+import { aiConfigured } from "@/lib/ai/client";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { Flash, PageTitle } from "../../ui";
+import { Flash } from "../../ui";
 import { ProductForm, type ProductFormInitial } from "../ProductForm";
 
 export const metadata: Metadata = { title: "Ürünü düzenle" };
@@ -37,15 +36,14 @@ export default async function EditProductPage(props: PageProps<"/admin/urunler/[
     gender: product.gender,
     hobbies: product.hobbies,
     hedisReviewed: product.hedisReviewed,
+    occasions: product.occasions,
+    tags: product.tags,
+    features: product.features,
     images: product.images.map((i) => ({ id: i.id, url: i.url, alt: i.alt, isBlob: i.isBlob })),
   };
 
   return (
     <>
-      <Link href="/admin/urunler" className="text-sm text-murekkep-soluk hover:underline">
-        ← Ürünler
-      </Link>
-      <PageTitle>{product.name}</PageTitle>
       {sp.kaydedildi && <Flash>Kaydedildi. Değişiklikler sitede hemen görünür.</Flash>}
       {/* key: kayıttan sonra form sunucudaki güncel değerlerle yeniden kurulsun */}
       <ProductForm

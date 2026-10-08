@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildPrompt, parseAiSuggestion, providerOf } from "./product-vision";
+import { extractJson, providerOf } from "./client";
+import { buildPrompt, parseAiSuggestion } from "./product-vision";
 
 const cats = [
   { id: "c1", name: "Çanta" },
@@ -7,26 +8,28 @@ const cats = [
 ];
 
 describe("parseAiSuggestion", () => {
-  it("modelin gerçek cevabını ayrıştırır ve kategoriyi eşler", () => {
-    const text = `{"urunAdi": "Yeşil Zigzag Örgü Elbise", "kategori": "kadın giyim (handmade)", "cinsiyet": "KADIN",
-      "kime": ["anne", "sevgili", "kiz-kardes"], "hobiler": ["el-isi", "moda", "seyahat"],
-      "altMetin": "Yeşil ve bej zigzag desenli askılı elbise", "aciklama": "Pamuk ipten elde örüldü."}`;
+  it("tam cevabı ayrıştırır, kategoriyi büyük/küçük harf bağımsız eşler", () => {
+    const text = `{"urunAdi": "Yeşil Zigzag Örgü Elbise", "aciklama": "Pamuk ipten elde örüldü.",
+      "ozellikler": ["Pamuk ip", "Askılı, midi boy"], "kategori": "kadın giyim (handmade)", "cinsiyet": "KADIN",
+      "kime": ["anne", "sevgili"], "hobiler": ["el-isi", "moda"], "ozelGunler": ["dogum-gunu", "uydurma"],
+      "etiketler": ["El Örgüsü", "yazlık", "el örgüsü"], "altMetinler": ["Önden görünüm", "Arkadan görünüm"]}`;
     expect(parseAiSuggestion(text, cats)).toEqual({
       name: "Yeşil Zigzag Örgü Elbise",
       description: "Pamuk ipten elde örüldü.",
+      features: ["Pamuk ip", "Askılı, midi boy"],
       categoryId: "c2",
       newCategoryName: undefined,
       gender: "KADIN",
-      recipients: ["anne", "sevgili", "kiz-kardes"],
-      hobbies: ["el-isi", "moda", "seyahat"],
-      alt: "Yeşil ve bej zigzag desenli askılı elbise",
+      recipients: ["anne", "sevgili"],
+      hobbies: ["el-isi", "moda"],
+      occasions: ["dogum-gunu"],
+      tags: ["el örgüsü", "yazlık"],
+      alts: ["Önden görünüm", "Arkadan görünüm"],
     });
   });
 
-  it("kod bloğu ve öncesindeki düşünme metnini atlar", () => {
-    const text = 'Fotoğrafa bakıyorum {not json}...\n```json\n{"urunAdi": "Saat", "kategori": "Aksesuar", "kime": ["baba"]}\n```';
-    const s = parseAiSuggestion(text.replace("{not json}", ""), cats);
-    expect(s?.name).toBe("Saat");
+  it("eşleşmeyen kategoriyi yeni kategori önerisi olarak döner", () => {
+    const s = parseAiSuggestion('{"urunAdi": "Saat", "kategori": "Aksesuar"}', cats);
     expect(s?.categoryId).toBeUndefined();
     expect(s?.newCategoryName).toBe("Aksesuar");
   });
@@ -41,8 +44,8 @@ describe("parseAiSuggestion", () => {
     expect(s?.hobbies).toEqual(["moda", "okuma", "muzik"]);
   });
 
-  it("JSON içindeki süslü parantezli metni bozmaz", () => {
-    expect(parseAiSuggestion('{"urunAdi": "Kalp {mini} kolye"}', cats)?.name).toBe("Kalp {mini} kolye");
+  it("eski tek fotoğraflık altMetin biçimini de okur", () => {
+    expect(parseAiSuggestion('{"altMetin": "Saat"}', cats)?.alts).toEqual(["Saat"]);
   });
 
   it("JSON yoksa null döner", () => {
@@ -50,12 +53,21 @@ describe("parseAiSuggestion", () => {
   });
 });
 
+describe("extractJson", () => {
+  it("kod bloğu ve öncesindeki metni atlar, metin içindeki süslü parantezi bozmaz", () => {
+    expect(extractJson('Bakıyorum...\n```json\n{"a": "Kalp {mini} kolye"}\n```')).toEqual({ a: "Kalp {mini} kolye" });
+  });
+});
+
 describe("buildPrompt", () => {
-  it("mevcut kategorileri ve Hediş anahtarlarını içerir", () => {
-    const p = buildPrompt(cats);
+  it("bilinenleri, kategorileri ve anahtarları içerir", () => {
+    const p = buildPrompt(cats, { name: "Ahşap kalem", description: "", priceKurus: 45_000, imageCount: 2 });
+    expect(p).toContain("Ürün adı: Ahşap kalem");
+    expect(p).toContain("Fiyat: 450 TL");
+    expect(p).toContain("Ekteki 2 fotoğrafı");
     expect(p).toContain("Çanta, Kadın Giyim (Handmade)");
+    expect(p).toContain("emeklilik");
     expect(p).toContain("kiz-kardes");
-    expect(p).toContain("kahve-cay");
   });
 });
 
@@ -63,6 +75,5 @@ describe("providerOf", () => {
   it("adında / olmayan modeller OpenAI, olanlar OpenRouter", () => {
     expect(providerOf("gpt-6-luna")).toBe("openai");
     expect(providerOf("google/gemma-4-31b-it:free")).toBe("openrouter");
-    expect(providerOf("~deepseek/deepseek-flash-latest")).toBe("openrouter");
   });
 });

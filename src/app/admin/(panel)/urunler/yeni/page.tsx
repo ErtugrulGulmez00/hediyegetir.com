@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { aiConfigured } from "@/lib/ai/product-vision";
+import { aiConfigured } from "@/lib/ai/client";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { PageTitle } from "../../ui";
 import { ProductForm } from "../ProductForm";
 
 export const metadata: Metadata = { title: "Yeni ürün" };
@@ -17,10 +15,6 @@ export default async function NewProductPage() {
 
   return (
     <>
-      <Link href="/admin/urunler" className="text-sm text-murekkep-soluk hover:underline">
-        ← Ürünler
-      </Link>
-      <PageTitle>Yeni ürün</PageTitle>
       <ProductForm
         initial={{
           id: null,
@@ -37,6 +31,9 @@ export default async function NewProductPage() {
           gender: "UNISEX",
           hobbies: [],
           hedisReviewed: true,
+          occasions: [],
+          tags: [],
+          features: [],
           images: [],
         }}
         categories={categories}

@@ -3,7 +3,7 @@
 
 ## Context
 
-Kullanıcı, hediyelik eşya satan bir işletme için **hediyegetir.com** sitesini başka bir Claude oturumuna yaptıracak. Bu oturumdaki görev kod yazmak değil; o oturumun baştan sona takip edeceği, prompt gibi çalışan, aşama aşama detaylı bir **yol haritası** dosyası (`C:\Users\01mrg\Desktop\projemimari\projemimarisi.md`) üretmek. Klasör şu an boş.
+Kullanıcı, hediyelik eşya satan bir işletme için **hediyegetir.com** sitesini başka bir Claude oturumuna yaptıracak. Bu oturumdaki görev kod yazmak değil; o oturumun baştan sona takip edeceği, prompt gibi çalışan, aşama aşama detaylı bir **yol haritası** dosyası üretmek. Klasör şu an boş.
 
 Kullanıcıdan alınan kararlar:
 

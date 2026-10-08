@@ -164,6 +164,75 @@
   }
 }
 
+/*
+  Yapay zeka görsel dili: sitenin kendi sıcak paletinde (kiremit → hardal → gül → zeytin).
+  Mor-mavi "AI" gradyanı bilinçli olarak kullanılmıyor.
+*/
+@property --ai-aci {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes ai-don {
+  to {
+    --ai-aci: 360deg;
+  }
+}
+@keyframes ai-isilti {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes ai-yildiz {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.78) rotate(18deg);
+    opacity: 0.75;
+  }
+}
+/* Dönen gradyan kenarlık: kutu içeriği .ai-kenar > * ile kağıt zeminde kalır */
+.ai-kenar {
+  border-radius: 0.875rem;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--ai-aci),
+    var(--color-kiremit),
+    var(--color-hardal),
+    var(--color-gul),
+    var(--color-zeytin),
+    var(--color-kiremit)
+  );
+}
+.ai-kenar[data-calisiyor="true"] {
+  animation: ai-don 2.6s linear infinite;
+  box-shadow:
+    0 0 0 4px rgb(217 164 65 / 0.14),
+    0 10px 30px -10px rgb(181 82 59 / 0.45);
+}
+.ai-kenar[data-calisiyor="false"] {
+  background: linear-gradient(120deg, var(--color-kraft), var(--color-hardal) 55%, var(--color-gul));
+}
+/* "Ürün analiz ediliyor" yazısının üstünden geçen ışık */
+.ai-isilti {
+  background: linear-gradient(90deg, var(--color-murekkep) 35%, var(--color-kiremit) 50%, var(--color-murekkep) 65%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ai-isilti 2.2s linear infinite;
+}
+.ai-yildiz {
+  animation: ai-yildiz 1.6s ease-in-out infinite;
+  transform-origin: center;
+}
+
 /* Hediş penceresi: aşağıdan hafifçe gelir */
 @keyframes pencere-gel {
   from {

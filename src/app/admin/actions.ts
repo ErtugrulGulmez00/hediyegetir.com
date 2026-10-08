@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { parseProductForm, type FieldErrors } from "@/lib/admin/product-input";
-import { DEFAULT_AI_MODEL } from "@/lib/ai/product-vision";
+import { analyzeProduct } from "@/lib/ai/analyze";
+import { AiError, aiConfigured, DEFAULT_AI_MODEL } from "@/lib/ai/client";
 import { login, logout, requireAdmin } from "@/lib/auth";
 import { CATALOG_TAG, SETTINGS_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
@@ -81,6 +82,9 @@ export async function saveProductAction(
     gender: d.gender,
     hobbies: d.hobbies,
     hedisReviewed: d.hedisReviewed,
+    occasions: d.occasions,
+    tags: d.tags,
+    features: d.features,
   };
 
   let id = productId;
@@ -171,6 +175,83 @@ export async function deleteCategoryAction(categoryId: string) {
     if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025")) throw e;
   }
   updateTag(CATALOG_TAG);
+}
+
+/** Ürün formundan: AI'ın önerdiği kategoriyi oluşturur (ya da aynı adlı varsa onu döner). */
+export async function createCategoryQuickAction(name: string): Promise<{ id: string; name: string } | { error: string }> {
+  await requireAdmin();
+  const r = CategoryInput.shape.name.safeParse(name);
+  if (!r.success) return { error: r.error.issues[0].message };
+  const all = await db.category.findMany({ select: { id: true, name: true, slug: true } });
+  const existing = all.find((c) => c.slug === slugify(r.data));
+  if (existing) return { id: existing.id, name: existing.name };
+  const created = await db.category.create({
+    data: { name: r.data, slug: uniqueSlug(r.data, new Set(all.map((c) => c.slug))), sortOrder: all.length },
+  });
+  updateTag(CATALOG_TAG);
+  return { id: created.id, name: created.name };
+}
+
+// ---------- AI ile toplu zenginleştirme ----------
+
+export type EnrichState = { done?: number; remaining?: number; errors?: string[]; message?: string; failedIds?: string[] };
+
+const ENRICH_BATCH = 8;
+
+/**
+ * Özel gün / etiket / özellik alanları boş ürünleri AI ile doldurur (yalnızca boş alanlar).
+ * Bir seferde ENRICH_BATCH ürün işler; kalan varsa admin tekrar basar. Öneri çıkmayan ürünler
+ * (skipIds) sonraki turlarda atlanır ki diğerlerinin önünü tıkamasın.
+ */
+export async function enrichProductsAction(skipIds: string[] = []): Promise<EnrichState> {
+  await requireAdmin();
+  if (!aiConfigured()) return { message: "Yapay zeka anahtarı tanımlı değil." };
+  const missing = { OR: [{ occasions: { isEmpty: true } }, { tags: { isEmpty: true } }, { features: { isEmpty: true } }] };
+  const products = await db.product.findMany({
+    where: { ...missing, id: { notIn: skipIds } },
+    orderBy: [{ isActive: "desc" }, { updatedAt: "desc" }],
+    take: ENRICH_BATCH,
+    include: { images: { orderBy: { sortOrder: "asc" }, take: 2, select: { url: true } } },
+  });
+  let done = 0;
+  const errors: string[] = [];
+  const failedIds = [...skipIds];
+  for (const p of products) {
+    try {
+      const { suggestion: s } = await analyzeProduct({
+        name: p.name,
+        description: p.description,
+        priceKurus: p.priceKurus,
+        imageUrls: p.images.map((i) => i.url),
+      });
+      const data: Prisma.ProductUpdateInput = {};
+      if (p.occasions.length === 0 && s.occasions.length) data.occasions = s.occasions;
+      if (p.tags.length === 0 && s.tags.length) data.tags = s.tags;
+      if (p.features.length === 0 && s.features.length) data.features = s.features;
+      if (!p.description.trim() && s.description) data.description = s.description;
+      if (!p.categoryId && s.categoryId) data.category = { connect: { id: s.categoryId } };
+      if (p.recipients.length === 0 && p.hobbies.length === 0 && (s.recipients.length || s.hobbies.length)) {
+        data.recipients = s.recipients;
+        data.hobbies = s.hobbies;
+        if (s.gender) data.gender = s.gender;
+      }
+      if (data.occasions || data.tags || data.recipients) data.hedisReviewed = false;
+      if (Object.keys(data).length === 0) {
+        errors.push(`${p.name}: AI yeni bir öneri çıkaramadı, elle doldurman gerekebilir`);
+        failedIds.push(p.id);
+        continue;
+      }
+      await db.product.update({ where: { id: p.id }, data });
+      done++;
+    } catch (e) {
+      errors.push(`${p.name}: ${e instanceof Error ? e.message : "hata"}`);
+      failedIds.push(p.id);
+      if (e instanceof AiError && /bakiye|anahtar/i.test(e.message)) break;
+    }
+  }
+  if (done > 0) updateTag(CATALOG_TAG);
+  const remaining = await db.product.count({ where: { ...missing, id: { notIn: failedIds } } });
+  return { done, remaining, errors, failedIds };
 }
 
 // ---------- Ayarlar ----------

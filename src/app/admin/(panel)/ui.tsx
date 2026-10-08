@@ -5,12 +5,15 @@ export const inputClass =
 
 export function Field({
   label,
+  labelExtra,
   hint,
   error,
   children,
   className = "",
 }: {
   label: string;
+  /** Etiketin yanında gösterilecek ek (ör. AI rozeti) */
+  labelExtra?: React.ReactNode;
   hint?: React.ReactNode;
   error?: string;
   children: React.ReactNode;
@@ -18,7 +21,10 @@ export function Field({
 }) {
   return (
     <label className={`flex flex-col gap-1.5 ${className}`}>
-      <span className="text-sm font-bold">{label}</span>
+      <span className="flex items-center text-sm font-bold">
+        {label}
+        {labelExtra}
+      </span>
       {children}
       {hint && !error && <span className="text-xs text-murekkep-soluk">{hint}</span>}
       {error && <span className="text-sm font-semibold text-kiremit-koyu">{error}</span>}

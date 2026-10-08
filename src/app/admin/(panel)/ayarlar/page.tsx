@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { aiConfigured, DEFAULT_AI_MODEL } from "@/lib/ai/product-vision";
+import { aiConfigured, DEFAULT_AI_MODEL } from "@/lib/ai/client";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { PageTitle, Panel } from "../ui";
