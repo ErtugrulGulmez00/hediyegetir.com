@@ -85,6 +85,8 @@ export async function saveProductAction(
     occasions: d.occasions,
     tags: d.tags,
     features: d.features,
+    galleryLayout: d.galleryLayout,
+    stamps: d.stamps,
   };
 
   let id = productId;

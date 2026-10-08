@@ -33,7 +33,7 @@ export function buildPrompt(categories: Category[], facts: ProductFacts): string
   ]
     .filter(Boolean)
     .join("\n");
-  return `Sen el yapımı ürünler satan bir hediye mağazasının ürün editörüsün. ${facts.imageCount > 0 ? `Ekteki ${facts.imageCount} fotoğrafı ve` : "Aşağıdaki"} bilgileri inceleyip ürünü kataloğa hazırla.
+  return `Sen bir hediye mağazasının ürün editörüsün. Mağazada hem el yapımı hem hazır ürünler var; ürünün el yapımı olduğu fotoğraftan ya da verilen bilgiden açıkça anlaşılmıyorsa "el yapımı" deme. ${facts.imageCount > 0 ? `Ekteki ${facts.imageCount} fotoğrafı ve` : "Aşağıdaki"} bilgileri inceleyip ürünü kataloğa hazırla.
 ${known || "(Admin henüz bilgi girmedi; yalnızca fotoğraflara dayan.)"}
 
 YALNIZCA aşağıdaki JSON'u döndür:

@@ -79,8 +79,8 @@ test("sepeti boşalt onay ister, onaylanınca her şeyi temizler", async ({ page
   await page.locator("article").first().locator("h3 a").click();
   await page.getByRole("button", { name: "Sepete ekle" }).click();
   await page.goto("/sepet");
-  page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "Sepeti boşalt" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Sepeti boşalt" }).click();
   await expect(page.getByText("Sepetin şimdilik boş.")).toBeVisible();
 });
 

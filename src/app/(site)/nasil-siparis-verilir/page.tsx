@@ -19,11 +19,11 @@ const STEPS = [
   },
   {
     title: "Siparişini WhatsApp'tan gönder",
-    text: "Sepetin hazır bir mesaj olarak açılır. Renk tercihini ve hediye notunu sepette yazabilirsin.",
+    text: "Sepetin hazır bir mesaj olarak açılır. Renk tercihi gibi isteklerini ve hediye notunu sepette yazabilirsin.",
   },
   {
     title: "Birlikte netleştirelim",
-    text: `Ödemeyi ve kargoyu WhatsApp'ta konuşuruz; parçan elde örülür ve ${ORDER_INFO.leadTimeDays} iş günü içinde kargoya verilir.`,
+    text: `Ödemeyi ve kargoyu WhatsApp'ta konuşuruz; siparişin hazırlanır ve ${ORDER_INFO.leadTimeDays} iş günü içinde kargoya verilir.`,
   },
 ];
 
@@ -35,7 +35,7 @@ const FAQ = [
   },
   {
     q: "Siparişim ne zaman kargoya verilir?",
-    a: `Siparişin netleştikten sonra parçan elde örülür ve ${ORDER_INFO.leadTimeDays} iş günü içinde kargoya verilir.`,
+    a: `Siparişin netleştikten sonra hazırlanır (el yapımı ürünler senin için elde yapılır) ve ${ORDER_INFO.leadTimeDays} iş günü içinde kargoya verilir.`,
   },
   { q: "Kargo ücreti ne kadar?", a: `${ORDER_INFO.shipping}.` },
   {

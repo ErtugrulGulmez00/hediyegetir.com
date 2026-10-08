@@ -11,7 +11,7 @@ import { ORDER_INFO } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Hikâyemiz",
   description:
-    "hediyegetir, KOSGEB desteğiyle kendi ayakları üzerinde durmaya çalışan bir kadın girişimcinin el emeği atölyesi. Her parça senin için, elde örülür.",
+    "hediyegetir, KOSGEB desteğiyle kendi ayakları üzerinde durmaya çalışan bir kadın girişimcinin hediye dükkânı. Kendi ördüğü parçalar ve özenle seçilmiş hediyeler.",
   alternates: { canonical: "/hakkimizda" },
 };
 
@@ -39,8 +39,8 @@ export default function AboutPage() {
               <h2 className="text-2xl sm:text-3xl">Bir kadın, bir yumak ve bir karar</h2>
               <p className="mt-3">
                 hediyegetir, el emeğini kendi işine dönüştürmeye karar veren bir kadın girişimcinin hikâyesi. Çantalar, giysiler ve
-                küçük güzellikler; hepsi onun ellerinde, tek tek örülüyor. Burada raflarda bekleyen seri üretim ürünler yok,
-                senin için başlanan bir iş var.
+                küçük güzellikler onun ellerinde, tek tek örülüyor; yanlarında da sevdiklerine gönül rahatlığıyla verebileceğin,
+                özenle seçilmiş hediyeler var. El yapımı olanlar ürün sayfasındaki damgalarından tanınır.
               </p>
             </section>
 

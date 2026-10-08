@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/store/confirm";
 import Image from "next/image";
 import { useActionState, useTransition } from "react";
 import {
@@ -129,9 +130,14 @@ export function CategoryCard({ category }: { category: CardData }) {
               type="button"
               className="text-sm font-semibold text-kiremit-koyu underline-offset-2 hover:underline"
               disabled={deleting}
-              onClick={() => {
-                const note = category.count > 0 ? ` ${category.count} ürün kategorisiz kalacak.` : "";
-                if (confirm(`"${category.name}" silinsin mi?${note}`)) startDelete(() => deleteCategoryAction(category.id));
+              onClick={async () => {
+                const ok = await confirmDialog({
+                  title: `"${category.name}" silinsin mi?`,
+                  message: category.count > 0 ? `${category.count} ürün kategorisiz kalacak.` : undefined,
+                  confirmLabel: "Evet, sil",
+                  danger: true,
+                });
+                if (ok) startDelete(() => deleteCategoryAction(category.id));
               }}
             >
               Sil

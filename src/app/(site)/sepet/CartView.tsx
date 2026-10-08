@@ -10,9 +10,12 @@ import { NotePaper } from "@/components/ui/NotePaper";
 import { Tape } from "@/components/ui/Tape";
 import { formatPrice } from "@/lib/money";
 import { buildCartMessage, cartSubtotal, MAX_NOTE_LENGTH, waLink, type WaLine } from "@/lib/whatsapp";
-import { useCart, useCartHydrated } from "@/store/cart";
+import { useCart, useCartHydrated, type CartLine } from "@/store/cart";
+import { confirmDialog } from "@/store/confirm";
 
 type Fetched = { key: string; products: Map<string, CartProduct>; error: boolean };
+/** WhatsApp'a gönderilen sepet: gönderilemediyse geri getirmek için */
+type Sent = { lines: CartLine[]; note: string; giftWrap: boolean };
 
 export function CartView({
   whatsappNumber,
@@ -30,6 +33,14 @@ export function CartView({
   const { setQty, remove, keepOnly, setNote, setGiftWrap, clear } = useCart.getState();
   const [fetched, setFetched] = useState<Fetched | null>(null);
   const [droppedNames, setDroppedNames] = useState(0);
+  const [sent, setSent] = useState<Sent | null>(null);
+
+  // Sipariş WhatsApp'a aktarılınca sepet (not ve hediye paketi dahil) boşalır. Bağlantı yeni sekmede
+  // açılabilsin diye temizlik tıklamadan hemen sonra yapılır.
+  const onSend = () => {
+    setSent({ lines, note, giftWrap });
+    setTimeout(clear, 300);
+  };
 
   const idsKey = useMemo(() => [...new Set(lines.map((l) => l.productId))].sort().join(","), [lines]);
   // Yalnızca bilgisi henüz çekilmemiş bir ürün varsa istek at (adet değişimi / çıkarma istek atmasın)
@@ -66,6 +77,33 @@ export function CartView({
 
   if (!hydrated || (lines.length > 0 && needsFetch && !failedForThisCart)) {
     return <CartSkeleton />;
+  }
+
+  if (lines.length === 0 && sent) {
+    return (
+      <NotePaper className="mt-10 max-w-md" lined tilt={-0.8} tape="hardal">
+        <p className="font-el text-3xl text-zeytin">Siparişin WhatsApp&apos;ta hazır!</p>
+        <p className="mt-2">
+          Açılan sohbette mesajı gönderdiğinde siparişin bize ulaşır; ödeme ve kargoyu orada birlikte netleştiririz. Sepetini senin
+          için temizledik.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link href="/" className="btn btn-ana">
+            Alışverişe devam et
+          </Link>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            useCart.setState({ lines: sent.lines, note: sent.note, giftWrap: sent.giftWrap });
+            setSent(null);
+          }}
+          className="mt-4 text-sm text-murekkep-soluk underline underline-offset-2 hover:text-murekkep"
+        >
+          Mesajı gönderemedin mi? Sepetini geri getir
+        </button>
+      </NotePaper>
+    );
   }
 
   if (lines.length === 0) {
@@ -168,8 +206,9 @@ export function CartView({
           </Link>
           <button
             type="button"
-            onClick={() => {
-              if (confirm("Sepetindeki tüm ürünler çıkarılsın mı?")) clear();
+            onClick={async () => {
+              if (await confirmDialog({ title: "Sepet boşaltılsın mı?", message: "Sepetindeki tüm ürünler çıkarılacak.", confirmLabel: "Sepeti boşalt", danger: true }))
+                clear();
             }}
             className="text-sm text-murekkep-soluk underline-offset-2 hover:text-kiremit-koyu hover:underline"
           >
@@ -215,7 +254,7 @@ export function CartView({
           <p className="mt-3 text-sm text-kiremit-koyu">{soldOutCount} tükenmiş ürün mesaja eklenmeyecek.</p>
         )}
         {href ? (
-          <a href={href} target="_blank" rel="noopener" className="btn btn-whatsapp mt-5 w-full">
+          <a href={href} target="_blank" rel="noopener" onClick={onSend} className="btn btn-whatsapp mt-5 w-full">
             Siparişi WhatsApp&apos;tan gönder
           </a>
         ) : (

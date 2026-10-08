@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { HedisProduct } from "@/app/api/hedis/sohbet/route";
 import { AiSparkle } from "@/components/ai/AiBits";
 import { ProductCard } from "@/components/site/ProductCard";
 import { TagChip } from "@/components/ui/TagChip";
+import { formatPrice } from "@/lib/money";
 import { useCart, useCartCount } from "@/store/cart";
 import { Mascot, type MascotMood } from "./Mascot";
 
@@ -218,28 +220,64 @@ function ResultCard({ product, index, ai }: { product: HedisProduct; index: numb
   );
 }
 
-/** Pencerenin altındaki bağlantılar. Sepette ürün varsa sepete kestirme yol da çıkar. */
+/** Hediş'in yazıyla andığı, kartı daha önce gösterilmiş ürünler: küçük bağlantılar */
+export function MentionedProducts({ products }: { products: HedisProduct[] }) {
+  return (
+    <ul className="mt-2.5 flex flex-wrap gap-1.5" aria-label="Bahsettiğim ürünler">
+      {products.map((p) => (
+        <li key={p.id}>
+          <Link
+            href={`/urun/${p.slug}`}
+            className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-murekkep/30 bg-krem py-0.5 pr-2.5 pl-0.5 text-sm font-semibold hover:border-murekkep"
+          >
+            {p.images[0] && <Image src={p.images[0].url} alt="" width={24} height={24} className="size-6 rounded-full object-cover" />}
+            {p.name}
+            <span className="font-normal text-murekkep-soluk">{formatPrice(p.priceKurus)}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Pencerenin altındaki bağlantılar. Sepette ürün varsa büyük, belirgin bir "Sepete git" düğmesi çıkar. */
 export function HedisActions({ onRestart, onBrowseShop }: { onRestart?: () => void; onBrowseShop: () => void }) {
   const count = useCartCount();
   // Saydam pencerede arkada ne olursa olsun okunsun: koyu kapsül üstünde açık renk
   const link = "underline-offset-2 hover:text-kagit hover:underline";
   return (
-    <div className="mt-3 flex justify-center">
+    <div className="mt-3 flex flex-col items-center gap-2.5">
+      {count > 0 && (
+        <Link
+          href="/sepet"
+          data-yuzey
+          className="inline-flex items-center gap-3 rounded-full border-2 border-murekkep bg-hardal px-6 py-3 text-lg font-bold text-murekkep shadow-baski transition-transform hover:-translate-y-0.5"
+        >
+          <CartIcon />
+          Sepete git ({count})
+          <span aria-hidden>→</span>
+        </Link>
+      )}
       <div className="inline-flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl bg-murekkep px-5 py-2 text-sm">
         {onRestart && (
           <button type="button" onClick={onRestart} className={`text-krem ${link}`}>
             ↺ Baştan başla
           </button>
         )}
-        {count > 0 && (
-          <Link href="/sepet" className="font-bold text-hardal underline-offset-2 hover:underline">
-            Sepete git ({count}) →
-          </Link>
-        )}
         <button type="button" onClick={onBrowseShop} className={`font-semibold text-krem ${link}`}>
           Diğer ürünlere göz at →
         </button>
       </div>
     </div>
+  );
+}
+
+function CartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 4h2.2l2.3 11h10.8l2-8H7" />
+      <circle cx="9.5" cy="19.5" r="1.5" />
+      <circle cx="17" cy="19.5" r="1.5" />
+    </svg>
   );
 }

@@ -21,7 +21,7 @@ export async function SiteFooter() {
             <GiftIcon className="size-7" /> hediyegetir
           </p>
           <p className="mt-2 max-w-sm text-[0.95rem] text-murekkep">
-            Elde örülen çantalar, giysiler ve küçük güzellikler. Online ödeme yok; siparişini WhatsApp&apos;tan birlikte
+            Sevdiklerin için özenle seçilmiş hediyeler. Online ödeme yok; siparişini WhatsApp&apos;tan birlikte
             netleştiriyoruz.
           </p>
         </div>

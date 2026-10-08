@@ -16,6 +16,13 @@ enum Gender {
   UNISEX
 }
 
+// Ürün sayfasında fotoğrafların dizilişi
+enum GalleryLayout {
+  TEK // tek büyük fotoğraf, kaydırmalı
+  IKILI // iki sütunlu ızgara
+  UCLU // bir büyük + iki küçük, sonrası üç sütun
+}
+
 model Category {
   id        String    @id @default(cuid())
   name      String
@@ -40,6 +47,9 @@ model Product {
   categoryId          String?
   category            Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   images              ProductImage[]
+  galleryLayout       GalleryLayout  @default(TEK)
+  // Ürün sayfasındaki mürekkep damgaları (en fazla 3); boş liste = damga yok. Damgalı ürün el yapımı sayılır
+  stamps              String[]       @default([])
 
   // Hediş etiketleri
   recipients    String[] @default([])

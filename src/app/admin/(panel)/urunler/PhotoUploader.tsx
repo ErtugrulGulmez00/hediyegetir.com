@@ -124,7 +124,7 @@ export function PhotoUploader({
   const empty = images.length === 0;
 
   return (
-    <div>
+    <div className="@container">
       <div
         onDragOver={(e) => {
           if (!isFileDrag(e)) return;
@@ -140,22 +140,20 @@ export function PhotoUploader({
         }}
         className={`rounded-xl border-2 border-dashed transition-colors ${
           dropActive ? "border-kiremit bg-hardal/15" : "border-kraft-koyu bg-kagit/60"
-        } ${empty ? "p-8 sm:p-12" : "p-3 sm:p-4"}`}
+        } ${empty ? "px-4 py-5" : "p-2"}`}
       >
         {empty ? (
           <div className="flex flex-col items-center text-center">
-            <CameraIcon className="size-12 text-kraft-koyu" />
-            <p className="mt-3 font-baslik text-xl">Ürün fotoğraflarını buraya bırak</p>
-            <p className="mt-1 text-sm text-murekkep-soluk">
-              Birden fazla fotoğraf seçebilirsin · JPEG, PNG, WebP · en fazla 5 MB · ilk fotoğraf kapak olur
-            </p>
-            <button type="button" className="btn btn-ana mt-5" onClick={() => fileInput.current?.click()}>
+            <CameraIcon className="size-8 text-kraft-koyu" />
+            <p className="mt-1.5 font-semibold">Fotoğrafları buraya bırak</p>
+            <button type="button" className="btn btn-ana mt-3 min-h-10 px-4 py-1.5 text-sm" onClick={() => fileInput.current?.click()}>
               Fotoğraf seç
             </button>
+            <p className="mt-2 text-xs text-murekkep-soluk">Çoklu seçim · JPEG, PNG, WebP · en fazla 5 MB · ilk fotoğraf kapak</p>
           </div>
         ) : (
           <>
-            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-5" aria-label="Ürün fotoğrafları">
+            <ul className="grid grid-cols-3 gap-2 @lg:grid-cols-5 @3xl:grid-cols-7" aria-label="Ürün fotoğrafları">
               {images.map((img, i) => (
                 <li
                   key={img.key}
@@ -206,8 +204,8 @@ export function PhotoUploader({
                   </div>
                   <input
                     aria-label="Fotoğraf açıklaması"
-                    className="mt-1 w-full truncate border-b border-transparent bg-transparent px-0.5 py-0.5 text-xs text-murekkep-soluk outline-none hover:border-kraft focus:border-murekkep focus:text-murekkep"
-                    placeholder="Açıklama (alt metin)"
+                    className="mt-0.5 w-full truncate border-b border-transparent bg-transparent px-0.5 py-0.5 text-[0.7rem] text-murekkep-soluk outline-none hover:border-kraft focus:border-murekkep focus:text-murekkep"
+                    placeholder="Açıklama"
                     value={img.alt}
                     onChange={(e) => setImages((s) => s.map((x) => (x.key === img.key ? { ...x, alt: e.target.value } : x)))}
                   />
@@ -218,16 +216,16 @@ export function PhotoUploader({
                   <button
                     type="button"
                     onClick={() => fileInput.current?.click()}
-                    className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-kraft-koyu text-murekkep-soluk hover:border-murekkep hover:text-murekkep"
+                    className="flex aspect-square w-full flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-dashed border-kraft-koyu text-murekkep-soluk hover:border-murekkep hover:text-murekkep"
                   >
-                    <span className="text-3xl leading-none">+</span>
+                    <span className="text-2xl leading-none">+</span>
                     <span className="text-sm font-semibold">Ekle</span>
                   </button>
                 </li>
               )}
             </ul>
-            <p className="mt-3 text-xs text-murekkep-soluk">
-              Sürükleyerek sırala · yeni fotoğrafları bu alana bırakabilirsin
+            <p className="mt-2 text-xs text-murekkep-soluk">
+              Sürükleyerek sırala · yeni fotoğrafları buraya bırak
             </p>
           </>
         )}

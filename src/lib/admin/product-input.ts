@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { HOBBIES, OCCASIONS, RECIPIENTS } from "../hedis/config";
 import { parsePriceInput } from "../money";
+import { DEFAULT_STAMPS, MAX_STAMPS, STAMP_MAX_LENGTH, type GalleryLayoutKey } from "../product-display";
 import { slugify } from "../slug";
 import { MAX_IMAGES_PER_PRODUCT } from "./images";
 
@@ -35,6 +36,12 @@ export const ProductFormSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(40)).max(15, "En fazla 15 etiket").default([]),
   features: z.array(z.string().trim().min(1).max(160)).max(8, "En fazla 8 özellik").default([]),
   images: z.array(ImageInput).max(MAX_IMAGES_PER_PRODUCT, `En fazla ${MAX_IMAGES_PER_PRODUCT} fotoğraf`),
+  galleryLayout: z.enum(["TEK", "IKILI", "UCLU"]).default("TEK"),
+  // Boş liste = damga yok
+  stamps: z
+    .array(z.string().trim().min(1).max(STAMP_MAX_LENGTH, `Damga en fazla ${STAMP_MAX_LENGTH} karakter`))
+    .max(MAX_STAMPS, `En fazla ${MAX_STAMPS} damga`)
+    .default(DEFAULT_STAMPS),
 });
 export type ProductFormInput = z.input<typeof ProductFormSchema>;
 
@@ -56,6 +63,8 @@ export type ProductData = {
   tags: string[];
   features: string[];
   images: ImageInput[];
+  galleryLayout: GalleryLayoutKey;
+  stamps: string[];
 };
 
 export type FieldErrors = Partial<Record<string, string>>;
@@ -113,6 +122,8 @@ export function parseProductForm(raw: unknown): { ok: true; data: ProductData } 
       tags: [...new Set(v.tags.map((t) => t.toLocaleLowerCase("tr-TR")))],
       features: v.features,
       images: v.images,
+      galleryLayout: v.galleryLayout,
+      stamps: [...new Set(v.stamps.map((t) => t.replace(/\s+/g, " ")))],
     },
   };
 }

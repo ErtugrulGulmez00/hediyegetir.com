@@ -24,11 +24,11 @@ export default function HomePage(props: PageProps<"/">) {
         <NotePaper className="mx-auto max-w-3xl" tilt={-0.4} tape="hardal">
           <p className="font-el text-xl text-kiremit-koyu">bu dükkânın hikâyesi</p>
           <h2 id="hikaye-baslik" className="mt-1 text-2xl sm:text-3xl">
-            Her ilmekte, kendi ayakları üzerinde duran bir kadının emeği var
+            Her pakette, kendi ayakları üzerinde duran bir kadının emeği var
           </h2>
           <p className="mt-3">
             hediyegetir, el emeğini kendi işine dönüştürmeye karar veren bir kadın girişimcinin, KOSGEB desteğiyle kurduğu küçük bir
-            atölye. Sipariş verdiğin her parça onun ellerinde, senin için örülüyor.
+            dükkân. Kendi ördüğü parçaların yanında özenle seçtiği hediyeler de var; her siparişi kendi elleriyle paketliyor.
           </p>
           <Link href="/hakkimizda" className="link-el mt-4 inline-block font-semibold">
             Hikâyemizi oku →

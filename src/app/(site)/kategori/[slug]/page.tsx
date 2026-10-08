@@ -16,10 +16,9 @@ export async function generateMetadata(props: PageProps<"/kategori/[slug]">): Pr
   const { slug } = await props.params;
   const category = await getCategoryBySlug(slug);
   if (!category) return { title: "Kategori bulunamadı" };
-  const lower = category.name.toLocaleLowerCase("tr-TR");
   return {
-    title: `El yapımı ${lower}`,
-    description: `Elde, istediğin renkte örülen ${lower} modelleri. ${ORDER_INFO.leadTimeDays} iş gününde kargoda; sipariş WhatsApp'tan.`,
+    title: category.name,
+    description: `${category.name} modelleri. ${ORDER_INFO.leadTimeDays} iş gününde kargoda; sipariş WhatsApp'tan.`,
     alternates: { canonical: `/kategori/${category.slug}` },
   };
 }
@@ -53,7 +52,7 @@ async function CategoryContent({ params, searchParams }: Pick<PageProps<"/katego
       <h1 className="text-4xl sm:text-5xl">
         <Scribble>{category.name}</Scribble>
       </h1>
-      <p className="mt-3 font-el text-2xl text-murekkep-soluk">elde, istediğin renkte örülür</p>
+      <p className="mt-3 font-el text-2xl text-murekkep-soluk">özenle seçtiklerimiz</p>
       <ShopContent searchParams={searchParams} category={category.slug} />
     </>
   );

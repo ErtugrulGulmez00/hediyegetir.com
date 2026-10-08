@@ -11,6 +11,7 @@ import { RibbonDivider } from "@/components/ui/RibbonDivider";
 import { Stamp } from "@/components/ui/Stamp";
 import { getActiveProductSlugs, getProductBySlug, getRelatedProducts, getSettings } from "@/lib/catalog";
 import { occasionByKey } from "@/lib/hedis/config";
+import { STAMP_ROTATIONS } from "@/lib/product-display";
 import { absoluteUrl } from "@/lib/site";
 import { buildProductQuestion, waLink } from "@/lib/whatsapp";
 
@@ -91,72 +92,94 @@ async function ProductDetails({ params }: Pick<PageProps<"/urun/[slug]">, "param
         )}
       </nav>
 
-      <div className="grid gap-10 md:grid-cols-2 md:gap-14">
-        <ProductGallery images={product.images} name={product.name} />
+      {/*
+        Masaüstünde fotoğraf ekran yüksekliğine göre boyutlanır; bilgiler iki sütuna bölünür
+        (solda satın alma, sağda ayrıntılar) ve fotoğrafla aynı hizada biter. Mobilde alt alta.
+      */}
+      <div className="grid gap-10 md:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] md:gap-12 lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-12">
+        <div className="relative min-w-0 lg:w-[clamp(19rem,calc((100dvh-15rem)*0.8),30rem)]">
+          <ProductGallery images={product.images} name={product.name} layout={product.galleryLayout} />
+          {/* Damgalar polaroidin sağ üst köşesine basılmış gibi; mobilde biraz küçük */}
+          {product.stamps.length > 0 && (
+            <div className="pointer-events-none absolute -top-5 -right-3 z-20 flex origin-top-right scale-[0.85] -space-x-3 sm:-right-5 sm:scale-100">
+              {product.stamps.map((t, i) => (
+                <Stamp key={t} rotate={STAMP_ROTATIONS[i % STAMP_ROTATIONS.length]} className="bg-kagit/85 backdrop-blur-[1px]">
+                  {t}
+                </Stamp>
+              ))}
+            </div>
+          )}
+        </div>
 
-        <div className="relative md:pt-4">
-          <div className="absolute -top-4 right-0 hidden sm:block">
-            <Stamp />
+        <div className="min-w-0 md:pt-4 lg:pt-0 xl:grid xl:grid-cols-2 xl:gap-x-10">
+          <div className="flex flex-col">
+            <h1 className="text-3xl sm:text-4xl xl:text-[2.1rem]">{product.name}</h1>
+            <PriceTag
+              size="lg"
+              className="mt-5"
+              priceKurus={product.priceKurus}
+              compareAtPriceKurus={product.compareAtPriceKurus}
+            />
+
+            <div className="mt-8 xl:mt-6">
+              <AddToCart productId={product.id} soldOut={soldOut} name={product.name} priceKurus={product.priceKurus} />
+            </div>
+
+            {askLink && (
+              <a href={askLink} target="_blank" rel="noopener" className="btn btn-whatsapp mt-1 self-start">
+                <WhatsAppIcon /> WhatsApp&apos;tan sor
+              </a>
+            )}
+
+            {/* Geniş ekranda sipariş bilgisi sütunun dibine oturur: fotoğrafla aynı hizada biter */}
+            <div className="pt-6 xl:mt-auto">
+              {/* El yapımı vurgusu yalnızca damgalı (el yapımı) ürünlerde */}
+              <OrderInfo handmade={product.stamps.length > 0} />
+            </div>
           </div>
-          <h1 className="pr-0 text-3xl sm:pr-24 sm:text-4xl">{product.name}</h1>
-          <PriceTag
-            size="lg"
-            className="mt-5"
-            priceKurus={product.priceKurus}
-            compareAtPriceKurus={product.compareAtPriceKurus}
-          />
 
-          <div className="mt-8">
-            <AddToCart productId={product.id} soldOut={soldOut} name={product.name} priceKurus={product.priceKurus} />
-          </div>
+          {(product.description || product.features.length > 0 || product.occasions.length > 0) && (
+            <div className="mt-10 flex flex-col gap-8 xl:mt-0 xl:gap-6 xl:pt-1">
+              {product.description && (
+                <div>
+                  <h2 className="font-el text-2xl font-normal text-kiremit-koyu">Bu parça hakkında</h2>
+                  <div className="mt-2 max-w-prose whitespace-pre-line text-murekkep/90">{product.description}</div>
+                </div>
+              )}
 
-          {askLink && (
-            <a href={askLink} target="_blank" rel="noopener" className="btn btn-whatsapp mt-1">
-              <WhatsAppIcon /> WhatsApp&apos;tan sor
-            </a>
-          )}
+              {product.features.length > 0 && (
+                <div>
+                  <h2 className="font-el text-2xl font-normal text-kiremit-koyu">Öne çıkanlar</h2>
+                  <ul className="mt-2 flex flex-col gap-1.5">
+                    {product.features.map((f) => (
+                      <li key={f} className="flex gap-2">
+                        <span aria-hidden className="text-kiremit">
+                          ✓
+                        </span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-          <OrderInfo className="mt-6" />
-
-          {product.description && (
-            <div className="mt-10">
-              <h2 className="font-el text-2xl font-normal text-kiremit-koyu">Bu parça hakkında</h2>
-              <div className="mt-2 max-w-prose whitespace-pre-line text-murekkep/90">{product.description}</div>
+              {product.occasions.length > 0 && (
+                <div>
+                  <h2 className="font-el text-2xl font-normal text-kiremit-koyu">Şu günler için güzel bir hediye</h2>
+                  <ul className="mt-2 flex flex-wrap gap-1.5">
+                    {product.occasions.map((k) => {
+                      const o = occasionByKey(k);
+                      return o ? (
+                        <li key={k} className="rounded-full border-[1.5px] border-kraft-koyu/70 bg-kagit px-3 py-1 text-sm font-semibold">
+                          {o.label}
+                        </li>
+                      ) : null;
+                    })}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
-
-          {product.features.length > 0 && (
-            <div className="mt-8">
-              <h2 className="font-el text-2xl font-normal text-kiremit-koyu">Öne çıkanlar</h2>
-              <ul className="mt-2 flex flex-col gap-1.5">
-                {product.features.map((f) => (
-                  <li key={f} className="flex gap-2">
-                    <span aria-hidden className="text-kiremit">
-                      ✓
-                    </span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {product.occasions.length > 0 && (
-            <div className="mt-8">
-              <h2 className="font-el text-2xl font-normal text-kiremit-koyu">Şu günler için güzel bir hediye</h2>
-              <ul className="mt-2 flex flex-wrap gap-1.5">
-                {product.occasions.map((k) => {
-                  const o = occasionByKey(k);
-                  return o ? (
-                    <li key={k} className="rounded-full border-[1.5px] border-kraft-koyu/70 bg-kagit px-3 py-1 text-sm font-semibold">
-                      {o.label}
-                    </li>
-                  ) : null;
-                })}
-              </ul>
-            </div>
-          )}
-
         </div>
       </div>
 
@@ -189,7 +212,7 @@ function WhatsAppIcon() {
 
 function ProductSkeleton() {
   return (
-    <div aria-hidden className="grid gap-10 pt-10 md:grid-cols-2 md:gap-14">
+    <div aria-hidden className="grid gap-10 pt-10 md:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] md:gap-12 lg:grid-cols-[clamp(19rem,calc((100dvh-15rem)*0.8),30rem)_minmax(0,1fr)] lg:gap-12">
       <div className="kagit aspect-[4/5] animate-pulse p-2.5">
         <div className="size-full bg-krem-koyu" />
       </div>

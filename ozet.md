@@ -1,280 +1,367 @@
 # hediyegetir.com — Proje özeti ve konuşma geçmişi
 
-Bu dosya, siteyi geliştirirken yaptığımız konuşmanın ve alınan kararların özetidir. Bir sonraki çalışma oturumunda kaldığımız yerden devam etmek için yazıldı.
+Bu dosya, siteyi geliştirirken yaptığımız konuşmaların ve alınan kararların özetidir. Yeni bir sohbet (ya da yeni bir çalışma oturumu) buradan okuyup kaldığımız yerden devam edebilsin diye yazıldı.
 
 - **Repo:** https://github.com/ErtugrulGulmez00/hediyegetir.com
-  - `main`: 8 Ekim sabahki sürüm.
-  - `demo-cilasi`: bu oturumun bütün değişiklikleri. İnceleyip `main`'e birleştirilecek.
+  - `main` ve `demo-cilasi` aynı yerde: `3084c1b`. Bütün çalışma `main`'de.
 - **Plan dosyası:** [ProjeMimarisi.md](ProjeMimarisi.md)
 - **Kurulum ve yayına alma:** [README.md](README.md)
-- **Son güncelleme:** 8 Ekim 2026, öğleden sonra
+- **Son güncelleme:** 8 Ekim 2026, akşam
 
 ---
 
-## 0. Nerede kaldık? (8 Ekim 2026, öğleden sonra)
+## Yeni sohbete not (önce bunu oku)
+
+- **Proje:** El örgüsü çanta, giysi ve küçük hediyeler satan bir dükkânın sitesi.
+  - Online ödeme yok; sepet WhatsApp mesajına dönüşüyor.
+  - Hediş adlı hediye asistanı ürün öneriyor.
+  - Ürünler admin panelinden ekleniyor.
+- **Amaç şu an:** Siteyi **site sahibine demo** olarak göstermek. Henüz yayında değil, yerelde çalışıyor.
+- **Kullanıcıyla çalışma biçimi:**
+  - Rahat Türkçe konuşuyor ("kanka").
+  - Onayladığı işleri soru sormadan sırayla bitirmeni istiyor; bitince siteyi Chrome'da açıp göster.
+  - Uzun seçenek listeleriyle soru sormaktan hoşlanmıyor. Bir şey belirsizse kısa sor ya da makul varsayımla ilerleyip söyle.
+- **Değişmeyecek kararlar:**
+  - Hediş'in ana sayfada **tam ekran kendiliğinden açılması bilinçli**. Sorun olarak gösterme, değiştirme.
+  - Ürün sayısının azlığından ya da çeşitsizliğinden doğan sorunlar konu dışı; ürünler zamanla eklenecek.
+  - Tasarım sıcak paletle (kraft, krem, kiremit, hardal, zeytin) kalacak. "AI" efektleri için mor-mavi gradyan kullanılmıyor.
+- **Gizli bilgiler:**
+  - Supabase şifresi, admin şifresi ve OpenAI anahtarı **yalnızca `.env`'de** duruyor; `.env` git'e girmiyor.
+  - Bunları hiçbir dosyaya, commit'e ya da bu özete yazma.
+  - OpenAI anahtarı daha önce sohbette paylaşıldı. Kullanıcı bunun sorun olmadığını, **anahtarı yenilemeyeceğini** açıkça söyledi; tekrar önerme.
+- **Bu bilgisayardaki (Windows) tuzaklar:** 6. bölümde.
+
+---
+
+## 0. Nerede kaldık? (8 Ekim 2026, akşam)
 
 **Durum:**
-- Site **site sahibine demo** olarak gösterilecek.
-- Bu oturumda seçtiğin bütün iyileştirmeler yapıldı ve test edildi. Ayrıntılar 3. bölümde, 13–18. maddelerde.
-- Veritabanı artık **Supabase** (proje `nwxpmjwbzryuyzmopgue`, Frankfurt). Yerel site de doğrudan Supabase'e bağlanıyor, yerelde ayrıca veritabanı çalıştırmaya gerek yok.
-- Hediş şu an **rehber modunda** çalışıyor (seçeneklerle öneri), çünkü bu bilgisayarın `.env`'inde yapay zeka anahtarı yok. Sohbet modu için `OPENAI_API_KEY` eklemek yeterli.
-- Ürünler: ikas'tan bir kez çekilen 7 ürün; adları ve açıklamaları düzeltildi. Yeni ürünler admin'den elle eklenecek.
 
-**Akşam devam ederken:**
+- Site demoya hazır. Bütün testler geçiyor (6. bölüm).
+- Veritabanı **Supabase** (proje `nwxpmjwbzryuyzmopgue`, Frankfurt). Yerel site doğrudan Supabase'e bağlanıyor.
+- `.env`'de OpenAI anahtarı var:
+  - Hediş **sohbet modunda** çalışıyor.
+  - Admin'de **fotoğraftan doldurma** açık. Fotoğraf yüklenince ad, kategori, açıklama, özellikler ve Hediş etiketleri yaklaşık 7 sn'de doluyor; fiyat ve stok bilerek boş kalıyor.
+- 7 ürün var:
+  - Hepsinin Hediş etiketleri gözden geçirilip onaylandı.
+  - Stokları "sipariş üzerine" (boş).
+  - Açıklamalar "sen" diliyle yazılı.
+- Ziyaret istatistikleri 8 Ekim akşamı sıfırlandı. Sonrasında yerel gezinti ve testler yeniden sayılıyor.
 
-```bash
-git pull                 # demo-cilasi dalındasın
-npm install              # yalnızca paketler değiştiyse
-npm run dev              # http://localhost:3000 · admin: /admin
-```
+**Kaldığımız soru:**
 
-Gerekli dosyalar bu bilgisayarda duruyor, git'e girmiyor:
-- `.env`: Supabase adresi ve şifresi, admin şifre hash'i ve anahtarlar.
-- `public/uploads`: ürün fotoğrafları.
+- Yapay zekanın yazdığı ürün açıklamaları **"siz"** diliyle ("stilinize"), sitenin geri kalanı **"sen"** diliyle.
+- Kullanıcı "siz yapabilirsin istersen" dedi, ama sonra konuyu açmadan push istedi. Karar netleşmedi.
+- Seçenekler:
+  - Yapay zeka talimatına "sen diye hitap et" eklemek: tek satır, `src/lib/ai/product-vision.ts` içindeki `aciklama` tarifi.
+  - Bütün siteyi "siz" yapmak: büyük bir metin değişikliği.
 
-Başka bir bilgisayarda devam edeceksen bu ikisini de taşıman gerekir.
+**Demo günü kontrol listesi:**
 
-**Sıradaki işler (öncelik sırasıyla):**
-1. **Supabase veritabanı şifresini yenile.** Şifre sohbette açıkça paylaşıldı. Supabase → Project Settings → Database → Reset password; yeni şifreyi `.env`'deki iki adrese yaz.
-2. **Fotoğrafların yeri:** Supabase'de `/uploads/...` adresiyle kayıtlı; Vercel'de bu klasör olmayacak. Vercel Blob mu, Supabase Storage mı? Karar verince fotoğrafları yükleyip adresleri güncelleyen adımı yazacağım.
-3. **Site sahibinden alınacak bilgiler:**
-    - Kargo ücreti: `src/lib/site.ts` → `ORDER_INFO.shipping`
-    - Ödeme yöntemleri ve iade/değişim koşulları: `src/app/(site)/nasil-siparis-verilir/page.tsx`
-    - KVKK'daki işletme adı, adres ve e-posta
-4. **Yayına alma (Vercel):** README'deki adımlar. Supabase'de **Connect → ORMs → Prisma** ekranındaki iki pooler adresi kullanılacak; doğrudan adres Vercel'de çalışmaz.
-5. `demo-cilasi` dalını inceleyip `main`'e birleştir.
-6. Admin → Ürünler → "Etiketi onaysız" filtresinden Hediş etiketlerini gözden geçir. 7 ürünün hepsinde aynı tahmini etiketler var.
+1. **Siteyi prod modunda göster:** `npm run build && npm start`.
+   - Dev modunda sol altta Next.js'in "N" rozeti çıkıyor.
+   - Dev modunda her sayfa ilk açılışta birkaç saniye derleniyor.
+2. **Ziyaret sayacını demodan hemen önce tekrar sıfırla.** `DailyStat` ve `VisitorDay` tablolarını boşaltmak yeterli.
+3. **WhatsApp numarasını doğrula:** Ayarlar'da 905050434796 var. Sahibin numarası mı, telefondan gerçek bir "sepet → WhatsApp" denemesi yap.
+4. **Telefondan göster:** Aynı Wi-Fi'de bilgisayarın yerel IP'siyle (ör. `http://192.168.1.101:3000`).
+5. **Önerilen 5 dakikalık akış:**
+   - Ana sayfada Hediş karşılar → "Anne" → öneriler → sepete ekle.
+   - Sepette not ve hediye paketi → WhatsApp'ta hazır mesaj.
+   - Telefondan admin'e gir, fotoğraf çekip ürün ekle (yapay zeka doldurur) → ürün sitede görünür.
+6. **Teslimde sahibe yeni admin şifresi ver.** Şu anki şifre testlerde ve sohbette geçti.
+
+**Site sahibine sorulacaklar:**
+
+- **Üstü çizili eski fiyatlar:** 7 ürünün hepsinde var (ikas'tan geldi, hepsi yaklaşık %10 indirimli).
+  - Gerçek bir kampanya yoksa kaldırılmalı: sürekli indirim inandırıcı değil.
+  - Mevzuat da indirimden önceki fiyatın gerçekten uygulanmış olmasını istiyor (son 30 gün kuralı).
+- **Instagram adresi:** Ayarlar'da boş, sitede sosyal bağlantı yok.
+- **Kargo ücreti** (`src/lib/site.ts` → `ORDER_INFO.shipping`).
+- **Ödeme yöntemleri ve iade/değişim koşulları** (`src/app/(site)/nasil-siparis-verilir/page.tsx`).
+- **KVKK'daki işletme adı, adres ve e-posta** (`src/app/(site)/kvkk/page.tsx`; şu an sarı yer tutucular var).
+
+**Sonraki büyük işler:**
+
+1. **Fotoğrafların yeri ve yedeği:**
+   - Ürün fotoğrafları yalnızca bu bilgisayarda (`public/uploads`, gitignore'da). ikas'la işimiz bittiği için başka kopya yok.
+   - Vercel'e çıkmadan önce Vercel Blob'a ya da Supabase Storage'a taşınmalı. Karar verilince fotoğrafları yükleyip adresleri güncelleyen adım yazılacak.
+2. **Yayına alma (Vercel):**
+   - README'deki adımlar izlenecek.
+   - Supabase'de **Connect → ORMs → Prisma** ekranındaki iki pooler adresi kullanılacak; doğrudan adres Vercel'de çalışmaz.
+   - `OPENAI_API_KEY` Vercel ortam değişkenlerine de eklenmeli.
+3. **Supabase veritabanı şifresi:** Sohbette paylaşıldı. Yenilemek önerildi; kullanıcı henüz bir şey demedi.
+4. **Supabase ücretsiz plan:** 7 gün hiç kullanılmazsa proje duraklatılıyor. Panelden tekrar başlatılabilir.
 
 ---
 
-## 1. Şu an site ne yapıyor?
+## 1. Site şu an ne yapıyor?
 
 **Ziyaretçi tarafı**
-- **Ana sayfa = ürün vitrini.**
-  - Yatay kaydırılan kategori çipleri, aramalı "Tüm kategoriler" penceresi, bütçe ve sıralama seçicileri.
-  - **Ürün araması:** ad, açıklama, kategori ve etiketlerde arar. Türkçe harfleri katlar, yani "canta" yazınca "Çanta" da bulunur.
-  - Üst bantta "3 iş gününde kargoda", hero'da "rengini sen seç, senin için örelim".
-  - Ürünlerin altında KOSGEB vurgulu "bu dükkânın hikâyesi" şeridi var.
-  - Masaüstünde geniş düzen: 1440 px'te neredeyse tam genişlik, 1920 px'te 1600 px.
-- **Kategori sayfaları:** `/kategori/canta`, `/kategori/giyim`. Kendi başlıkları, açıklamaları ve canonical adresleri var, sitemap'te yer alıyorlar. Eski `/?kategori=` ve `/magaza` linkleri buraya yönleniyor.
-- **Hediş, hediye asistanı.**
-  - Ana sayfaya gelen ziyaretçiye oturum başına bir kez **tam ekran** açılıyor. Bu bilinçli bir karar, değişmeyecek.
-  - **Sohbet modu** (yapay zeka anahtarı varsa): çip ya da serbest metin; her turda tek bir soru ve hazır cevaplar; öneri ve her ürün için "neden" cümlesi.
-  - **Rehber modu** (anahtar yoksa, bakiye bittiyse ya da sınır dolduysa kendiliğinden): kime → bütçe → ilgi alanları seçenekleri; kural tabanlı motor öneri yapar. Sohbette seçilen kişi rehbere taşınır.
-  - Önerilen ürünler sepete eklenebiliyor; sepette ürün varken "Sepete git (N) →" çıkıyor.
-  - Üst menüde "Hediş · hediye asistanı" düğmesi var. Sağ alttaki yüzen düğme yalnızca sayfa aşağı kayınca görünüyor, sepette gizli.
+
+- **Üst kısım:**
+  - Koyu bant: "3 iş gününde kargoda · sipariş ve ödeme WhatsApp'tan".
+  - Logo, hap biçimli **menü çubuğu** (Mağaza · Hediş · Nasıl sipariş verilir? · Hikâyemiz) ve "Sepet" düğmesi. Mobilde menü logonun altına iner, sığmazsa yana kayar.
+- **Ana sayfa:**
+  - **Hero:**
+    - Başlık "Elde örülen, sevgiyle paketlenen hediyeler", alt satır "rengini sen seç, senin için örelim".
+    - Düğmeler, üç güven maddesi.
+    - Sağda öne çıkan ürünlerden polaroid kolajı. (Köşedeki maskot ve "Kime hediye arıyorsun?" balonu kullanıcının isteğiyle kaldırıldı.)
+  - Altında ürün vitrini: kategori çipleri, arama, bütçe ve sıralama.
+  - En altta KOSGEB vurgulu "bu dükkânın hikâyesi" şeridi.
+- **Ürün araması:** Ad, açıklama, kategori ve etiketlerde arar. Türkçe harfleri katlar: "canta" yazınca "Çanta" da bulunur, "yelek" yazınca süveterler çıkar.
+- **Kategori sayfaları:** `/kategori/canta`, `/kategori/giyim`. Eski `/?kategori=` ve `/magaza` adresleri buraya yönleniyor.
+- **Hediş, hediye asistanı:**
+  - Ana sayfaya gelen ziyaretçiye oturum başına bir kez tam ekran açılıyor.
+  - Görünüm **çerçevesiz ve saydam**: koyu bulanık bir arka plan üstünde ortada sallanan maskot, konuşma balonu ve seçenek etiketleri. Başlık ya da "Kapat" yazısı yok.
+  - Kutuların dışına tıklayınca ya da Esc'e basınca kapanıyor. Ekran okuyucular için gizli bir başlık ve "Kapat" düğmesi var.
+  - **Sohbet modu** (anahtar varsa): Çip ya da serbest metinle başlıyor. Her turda tek bir soru soruyor ve hazır cevaplar sunuyor. Önerdiği her ürün için bir "neden" cümlesi yazıyor.
+  - **Rehber modu** (anahtar yoksa, bakiye bittiyse ya da sınır dolduysa kendiliğinden): Kime → bütçe → ilgi alanları seçeneklerinden sonra kural tabanlı motor öneri yapıyor.
+  - Öneriler sepete eklenebiliyor; sepette ürün varken büyük, hardal renkli "Sepete git (N) →" düğmesi çıkıyor.
+  - Gösterilen ürünler hakkında soru sorulunca (fiyat, ölçü…) yalnızca yazıyla cevap veriyor; aynı ürün kartları tekrar açılmıyor, mesajın altında küçük bağlantı olarak anılıyor.
+  - Pencere 2 dakikadan uzun kapalı kaldıysa açılınca "kaldığımız yerden devam edelim mi?" diye soruyor; 30 dakikadan uzun kapalı kaldıysa sohbet baştan başlıyor.
+  - Sağ alttaki yüzen düğme yalnızca sayfa aşağı kayınca görünüyor ve sepette gizleniyor.
 - **Ürün sayfası:**
-  - Kaydırılabilen galeri; dokununca tam ekran görüntüleyici (oklar, Esc, tıklayınca büyütme).
-  - Fiyat, adet, sepete ekle, "WhatsApp'tan sor", "Öne çıkanlar", benzer ürünler, JSON-LD.
-  - "Sepete ekle"nin altında sipariş bilgisi: elde ve istediğin renkte örülür, 3 iş gününde kargoda, ödeme ve kargo WhatsApp'ta netleşir.
+  - Galeri admin'de seçilen düzende: **Tek** (kaydırmalı), **İkili** (iki sütun) ya da **Üçlü** (bir büyük + iki küçük). Fotoğraf yetmezse bir alt düzene düşer. Fotoğraf sütunu dar (masaüstünde 26–30rem), sayfa kaydırmadan görünüyor.
+  - Masaüstünde fotoğrafın üstüne gelince imlecin olduğu yer büyüyor. Tıklayınca görüntüleyici açılıyor: tekerlek/tıklama/+− ile yakınlaştırma, sürükleyerek gezme, altta küçük resimler; mobilde çift dokunuş ve iki parmakla büyütme, kaydırarak geçiş. Dışarı tıklayınca ya da Esc ile kapanıyor.
+  - Masaüstünde fotoğraf ekran yüksekliğine göre boyutlanıyor; bilgiler iki sütun (satın alma | açıklama, özellikler, özel günler) ve sipariş bilgisi fotoğrafla aynı hizada bitiyor. Mobilde alt alta.
+  - Fotoğrafın sağ üst köşesinde (mobilde de) ürüne göre en fazla 3 damga: hazırlar ("El yapımı", "Ev yapımı", "El işi", "Kadın işi", "Kadın emeği") ya da serbest yazı (en çok 20 karakter); hiç yoksa damga görünmüyor.
+  - Fiyat, adet, "Sepete ekle", "WhatsApp'tan sor".
+  - Sipariş bilgisi kutusu: elde ve istediğin renkte örülür · 3 iş gününde kargoda · ödeme ve kargo WhatsApp'ta netleşir.
+  - "Öne çıkanlar", benzer ürünler.
   - Mobilde aşağı inince alttan yapışkan "Sepete ekle" çubuğu açılıyor.
-- **Sepet → WhatsApp.** Online ödeme yok.
-  - "Hediye olarak paketlensin" kutusu ve not alanı (renk, beden, hediye notu) mesaja ekleniyor.
-  - Buton metni "Siparişi WhatsApp'tan gönder". "Sepeti boşalt" düğmesi var.
-  - Mesaj 905050434796 numarasına gidiyor.
+- **Sepet → WhatsApp:**
+  - "Hediye olarak paketlensin" kutusu ve not alanı mesaja ekleniyor.
+  - Düğmeler: "Siparişi WhatsApp'tan gönder", "Sepeti boşalt".
 - **Diğer sayfalar:**
   - `/nasil-siparis-verilir`: 3 adım ve SSS.
-  - `/hakkimizda`: KOSGEB desteğiyle kendi ayakları üzerinde duran bir kadın girişimcinin hikâyesi.
-  - KVKK/çerez (işletme bilgileri hâlâ yer tutucu), 404 (artık header, footer ve sepetle), hata sayfaları, sitemap, robots.
+  - `/hakkimizda`: KOSGEB desteğiyle kendi ayakları üzerinde duran bir kadın girişimcinin hikâyesi ve **atölye videosu**. Video sesiz döngüde, görününce oynuyor; hareket azaltma tercihine uyuyor.
+  - KVKK/çerez, 404 (header ve footer'la), sitemap, robots.
+  - iPhone ana ekran ikonu (`src/app/apple-icon.png`).
 
 **Admin paneli (`/admin`)**
-- **Giriş:** Tek admin, şifre bcrypt ile saklanıyor, oturum JWT çerezinde. Hatalı giriş denemeleri sınırlı.
-- **Özet:** Ziyaret kutuları (bugün / 7 / 30 gün), 30 günlük grafik, etiketi onaylanmamış ürün uyarısı.
-- **Ürün ekleme/düzenleme ekranı:**
-  - Sürükle-bırak çoklu fotoğraf yükleme.
-  - Fotoğraftan ya da addan yapay zeka önerisi; yalnızca boş alanları doldurur, doldurduğu alanlarda "AI" rozeti çıkar.
-  - Eşleşmeyen kategori için "Kategoriyi oluştur" önerisi.
-  - **Kaydedilmemiş değişiklik varken sayfadan çıkmaya çalışınca uyarı veriyor.**
-- **Ürün listesi:** Arama, filtreler, hızlı yayın aç/kapa, "AI ile eksikleri doldur".
-- **Kategoriler** ve **Ayarlar** (WhatsApp numarası, mesajın ilk cümlesi, Instagram, yapay zeka modeli).
 
-**Kalite (8 Ekim öğleden sonra)**
-- 91 birim testi (vitest), tip denetimi ve lint temiz.
-- 36 uçtan uca test (masaüstü + mobil) Supabase üzerinde geçti. Bunlara erişilebilirlik (axe) taramaları dahil; yeni sayfalar da tarandı.
-- Admin E2E testleri bu oturumda çalıştırılmadı, çünkü veritabanına geçici ürün yazıyorlar.
+- **Giriş:** Tek admin. Şifre bcrypt ile saklanıyor, oturum JWT çerezinde, hatalı denemeler sınırlı.
+- **Menü:** Masaüstünde solda. Mobilde dört bağlantı tek satırda; "Siteyi aç ↗" ve "Çıkış" logonun yanında.
+- **Özet:** Ziyaret kutuları (bugün / 7 / 30 gün), 30 günlük grafik, etiketi onaysız ürün uyarısı.
+- **Ürün ekranı:**
+  - Tek ekranlık düzen: üst çubukta Yayında / Öne çıkan ve Kaydet. Geniş ekranda üç sütun: (1) küçük fotoğraf alanı + "Ürün sayfasında görünüm" (fotoğraf düzeni seçici, eldeki fotoğraflarla önizleme; çoklu damga seçici, canlı önizleme), (2) ürün bilgileri, (3) yapışık ve kendi içinde kayan AI asistanı + Hediş etiketleri.
+  - Önce fotoğraf (sürükle-bırak, çoklu).
+  - Yapay zeka asistanı: Fotoğraftan ya da addan öneri getiriyor ve yalnızca boş alanları dolduruyor. Doldurduğu alanlarda "AI" rozeti çıkıyor.
+  - Eşleşmeyen kategori önerilirse "Kategoriyi oluştur" teklif ediyor.
+  - Kaydedilmemiş değişiklik varken sayfadan çıkmaya çalışınca uyarıyor.
+- **Ürün listesi:** Kart ızgarası (fotoğraf, öne çıkan / etiket onaysız rozetleri, fiyat, kategori · stok). Arama, filtreler (Yayında / Pasif / Etiketi onaysız), hızlı yayın aç/kapa, "AI ile eksikleri doldur".
+- **Kategoriler:** Kart görünümü. Her kartta ürün küçük resimleri, ürün ve yayındaki ürün sayısı, "mağazada gizli" rozeti ve "Sitede gör ↗" bağlantısı var.
+- **Ayarlar:**
+  - WhatsApp numarası, mesajın ilk cümlesi, Instagram.
+  - Yapay zeka modeli seçimi:
+    - Anahtar varken kapalı bir "Gelişmiş" bölümünde duruyor.
+    - Anahtar yoksa hiç görünmüyor.
+    - Alan formda yoksa kayıtlı model korunuyor.
 
 ---
 
 ## 2. Teknik yapı (kısaca)
 
 - **Çatı:** Next.js 16 (App Router, Cache Components, `proxy.ts`), TypeScript, Tailwind v4.
+  - Bu Next sürümü eğitim verisindekinden farklı. Kod yazmadan önce `node_modules/next/dist/docs/` altındaki ilgili rehbere bak (`AGENTS.md`).
 - **Veritabanı:** Prisma 7 + PostgreSQL, **Supabase** üzerinde.
-  - Yerelde doğrudan bağlantı kullanılıyor (`db.<proje>.supabase.co:5432`). Bu adres yalnızca IPv6 destekliyor; bu bilgisayarda çalışıyor.
-  - Vercel'de pooler adresleri kullanılacak (README'de anlatılıyor).
+  - **Yerel bağlantı:**
+    - Doğrudan adres `db.<proje>.supabase.co:5432`; yalnızca IPv6 destekliyor, bu bilgisayarda çalışıyor.
+    - `DATABASE_URL` uygulamanın kendisi için, `sslmode=no-verify` ile.
+    - `DIRECT_URL` Prisma CLI ve migration'lar için, `sslmode=require` ile.
+  - **Güvenlik:** Supabase'de bütün tablolarda RLS açık ve hiç politika yok. Yani Supabase'in herkese açık REST API'si veri döndürmüyor; uygulama yalnızca Prisma üzerinden erişiyor.
   - Şema Prisma migration'larıyla kuruluyor; Supabase CLI gerekmiyor.
-  - `npx prisma dev` (Docker'sız yerel Postgres) denendi; eşzamanlı bağlantılarda kopup kilitlendiği için bırakıldı. Eski yerel veri o sunucuda yedek olarak duruyor.
-- **Fotoğraflar:** Vercel Blob planlanıyor. Anahtar yokken yerelde `public/uploads` kullanılıyor; bu klasör gitignore'da.
+  - Vercel'de pooler adresleri kullanılacak (README).
+- **Katalog önbelleği:** `"use cache"` + `cacheTag(CATALOG_TAG)`.
+  - Admin işlemleri önbelleği kendisi tazeliyor.
+  - Veritabanına betikle doğrudan yazılırsa değişiklik en geç bir saatte görünür; hemen görmek için dev sunucusunu yeniden başlat.
+- **Fotoğraflar:** Vercel Blob için kod hazır. Blob anahtarı yokken yerelde `public/uploads` kullanılıyor (gitignore'da).
+- **Video:** `public/videos/hakkimizda.mp4` (4,8 MB, 1280×720, 10 sn) ve kapak resmi `hakkimizda-kapak.jpg`. İkisi de git'te.
 - **Yapay zeka:** OpenAI, varsayılan model `gpt-6-luna`.
-  - Ürün analizi yaklaşık 3–5 sn, ürün başına yaklaşık 0,00015 $.
-  - Model Ayarlar'dan değiştirilebiliyor; adında "/" olan modeller OpenRouter üzerinden çağrılıyor.
-  - Hediş sohbeti de aynı modeli kullanıyor.
-  - Anahtar yoksa ya da kalıcı bir hata olursa (bakiye, geçersiz anahtar) sohbet uç noktası 503 döner, Hediş rehber moduna geçer.
-- **Sipariş/teslimat metinleri tek yerde:** `src/lib/site.ts` → `ORDER_INFO`. Üst bant, ürün sayfası ve SSS buradan okuyor.
+  - Ürün analizi yaklaşık 3–7 sn sürüyor; fotoğraf başına maliyet yaklaşık 0,00015 $.
+  - Adında "/" olan modeller OpenRouter üzerinden çağrılıyor (artık kullanılmıyor).
+  - Hediş sohbeti de aynı anahtarı kullanıyor.
+    - Sınır: IP başına 10 dakikada 30 istek, günde toplam 1500 (`HEDIS_DAILY_LIMIT`).
+    - Kalıcı hata olursa (anahtar yok, bakiye bitti) sohbet uç noktası 503 dönüyor ve Hediş rehber moduna geçiyor.
+- **Sipariş/teslimat metinleri tek yerde:** `src/lib/site.ts` → `ORDER_INFO`.
 - **Önemli klasörler:**
-  - `src/lib/ai/`: AI istemcisi, ürün analizi, öneri birleştirme.
-  - `src/lib/hedis/`: sohbet, kural tabanlı öneri motoru, rehber metinleri (`messages.ts`), sınıflandırma.
-  - `src/components/hedis/`: `HedisChat` (sohbet), `HedisRehber` (seçenekli mod), `HedisParts` (ortak parçalar).
-  - `src/components/site/`: `SiteShell` (header/footer/Hediş kabuğu; 404 de kullanıyor), `ShopSection`, `OrderInfo`, galeri.
-  - `src/app/admin/`: Admin paneli.
-  - `src/app/(site)/`: Vitrin.
-  - `e2e/`: Uçtan uca testler.
-- **Tasarım dili:** Kraft kağıt, krem, kiremit, zeytin, hardal; Fraunces + Caveat + Karla fontları; washi bant, delikli fiyat etiketi, el çizimi alt çizgi. AI efektleri bilerek bu sıcak paletle yapıldı (mor-mavi "AI" gradyanı kullanılmadı).
+  - `src/lib/ai/`: AI istemcisi, ürün analizi (`product-vision.ts`), öneri birleştirme.
+  - `src/lib/hedis/`: sohbet, kural tabanlı öneri motoru (`recommend.ts`), sınıflandırma (`config.ts`), rehber metinleri.
+  - `src/components/hedis/`:
+    - `HedisDialog`: saydam tam ekran pencere ve yüzen düğme. Tıklanınca kapanmaması gereken yüzeyler `data-yuzey` ile işaretli.
+    - `HedisChat`, `HedisRehber`, `HedisParts`.
+  - `src/components/site/`:
+    - Kabuk: `SiteShell`, `SiteHeader`, `NavLinks`, `CartLink`.
+    - Sayfa parçaları: `HomeHero`, `ShopSection`, `OrderInfo`, `ProductGallery`, `AddToCart`, `AtolyeVideo`.
+  - `src/app/(site)/`: vitrin. `src/app/admin/`: admin paneli. `e2e/`: uçtan uca testler.
+- **Tasarım dili:**
+  - Renkler: kraft kağıt, krem, kiremit, zeytin, hardal, gül.
+  - Fontlar: Fraunces, Caveat, Karla.
+  - Süsler: washi bant, delikli fiyat etiketi, el çizimi alt çizgi.
 
 ---
 
 ## 3. Konuşma geçmişi ve alınan kararlar
 
-**Başlangıç ve kurulum**
-1. **Başlangıç:** `ProjeMimarisi.md`'deki planı aşama aşama uygulamam istendi.
-2. **İlk kararlar:**
-   - Yerel veritabanı Docker'da çalışacak. Docker başta açılmadı; sen düzelttin.
-   - Marka adı "hediyegetir" olacak.
-   - Her aşama sonunda GitHub'a commit + push yapılacak.
-3. **GitHub yetkisi:** İlk push 403 verdi. `umitcan246` hesabı repoya collaborator olarak eklendi ve sorun çözüldü.
+**İlk sürüm (önceki bilgisayar)**
 
-**İlk sürüm (Aşama 0–9)**
-
-4. **Aşama 0–9:** Kurulum, veri modeli, ikas'tan ürün aktarma, tasarım sistemi, mağaza, sepet + WhatsApp, admin, Hediş (kural tabanlı ilk sürüm), ziyaret istatistikleri, cilalama.
-   - Arada tarayıcıda çıkan bir sepet hatası düzeltildi: depolama tanımı sırası yüzünden `useCart.persist` undefined oluyordu.
-5. **WhatsApp numarası:** 0505 043 47 96 verildi, 905050434796 olarak kaydedildi.
-6. **Çerez kararı:** Ziyaret istatistiği çerezi için "planlandığı gibi kalsın" dendi: onay bandı yok, sadece bilgilendirme sayfası var. Hukuki sorumluluk sende.
-7. **KVKK işletme bilgileri:** Sonra verilecek; sayfada sarı vurgulu yer tutucular var.
-
-**Sonraki değişiklikler**
-
-8. **ikas kaldırıldı:** "ikas ile işimiz kalmadı, ürünleri biz ekleyeceğiz" dendi.
-   - Senkron kodu, admin sayfası ve ilgili veritabanı alanları silindi.
-   - ikas'taki fotoğraflar yerel diske indirildi.
-   - Yayına ilk geçiş için `npm run urun-aktar` betiği yazıldı.
-9. **Hediş açılır pencereye taşındı:** "Hediş ana sayfada popup olarak çıksın" dendi. Ana sayfa vitrin oldu, Hediş açılır pencereye taşındı.
-10. **Fotoğraftan yapay zeka önerisi:**
-    - Önce OpenRouter anahtarı denendi. Kredisiz hesapta yalnızca ücretsiz modeller çalıştı; fotoğraf başına 25–40 sn sürdü, sık sık meşgul oldu, Türkçesi hatalıydı.
-    - Sonra OpenAI anahtarı verildi (4 $ bakiye). gpt-6-luna, gpt-5-nano ve gpt-4.1-nano karşılaştırıldı.
-    - En hızlı, en ucuz ve Türkçesi en iyi olan **gpt-6-luna** seçildi: yaklaşık 2,7 sn, yaklaşık 0,00015 $.
-    - Kararlar: "Önce ücretsizle başla, model ayarlardan değişebilsin" ve "Yalnızca boş alanları doldursun".
-11. **Büyük UI/UX ve AI isteği:**
-    - **A.** Geniş sayfa düzeni ve ölçeklenebilir filtre alanı.
-    - **B.** Admin ürün ekranı baştan; AI analizi, animasyon, kategori önerisi, toplu zenginleştirme.
-    - **C.** Hediş'in AI ile konuşması.
-    - Tek tek gerçek modelle denendi ve test edildi.
-12. **Talimat:** "Soru sorma, emin olmadıklarını sonraki mesaja bırak, bitince her şeyi ve bu özet dosyasını pushla."
+1. `ProjeMimarisi.md`'deki plan aşama aşama uygulandı (Aşama 0–9):
+   - Kurulum, veri modeli, ikas'tan aktarma, tasarım sistemi.
+   - Mağaza, sepet + WhatsApp, admin.
+   - Hediş (kural tabanlı), ziyaret istatistikleri, SEO ve erişilebilirlik.
+   - Marka adı "hediyegetir". GitHub'a ilk push 403 verdi; `umitcan246` hesabı collaborator olarak eklenince çözüldü.
+2. **WhatsApp:** 0505 043 47 96, `905050434796` olarak kayıtlı.
+3. **Çerez kararı:** Onay bandı yok, yalnızca bilgilendirme sayfası var. Hukuki sorumluluk kullanıcıda.
+4. **ikas kaldırıldı:** Senkron kodu silindi; yayına ilk geçiş için `npm run urun-aktar` betiği yazıldı.
+5. **Hediş açılır pencereye taşındı.** Ana sayfa artık vitrin.
+6. **Fotoğraftan yapay zeka önerisi:**
+   - OpenRouter'ın ücretsiz modelleri yavaş ve hatalıydı.
+   - OpenAI'da karşılaştırma yapıldı; **gpt-6-luna** seçildi (hızlı, ucuz, Türkçesi iyi).
+   - Kural: yapay zeka yalnızca boş alanları doldurur.
+7. **Büyük UI/AI turu:** Geniş düzen ve filtre alanı, admin ürün ekranı baştan, Hediş'in yapay zekayla konuşması.
 
 **8 Ekim öğleden sonra: yeni bilgisayar, demo cilası, Supabase**
 
-13. **Yeni bilgisayar:**
-    - Proje GitHub'dan zip olarak indirildi (`C:\DEVPACKS\hediyegetir.com-main`).
-    - Bu bilgisayarda Docker ve WSL yok. Önce `npx prisma dev` ile yerel bir veritabanı kuruldu, örnek verilerle açıldı.
-    - "Docker kuralım" fikri, eksik bağımlılık olmadığı (sorun demo verisiydi) anlaşılınca ertelendi.
-14. **Ürünler ikas'tan bir kez çekildi:**
-    - "Ürünleri bir kere çek, görselleri dosyamıza indir, sonra ikasla işimiz kalmasın" dendi.
-    - 7 ürün ve 9 fotoğraf alındı (`public/uploads`). Geçici betik çalıştırılıp silindi; projede ikas'a bağ kalmadı.
-    - Diğer ürünler zamanla admin'den eklenecek.
-15. **Acımasız ama yapıcı inceleme:** Dört başlıkta (mantık/akış, UI/UX, metinler, eksikler) Kritik/Orta/Düşük olarak 48 maddelik bir rapor hazırlandı. Kararların:
-    - Site **demo**; demo için önemsiz konuların kavgası verilmeyecek.
-    - Ürün azlığından ya da çeşitsizliğinden doğan sorunlar konu dışı, çünkü ürünler eklenecek.
-    - **Hediş'in ilk sayfada tam ekran açılması bilinçli bir karar; değişmeyecek.**
-    - Rapordan beğendiğin maddeler seçildi ve sırayla uygulandı.
-16. **Uygulanan maddeler:**
-    - **Hediş:**
-        - Yapay zekasız rehber modu (eski kural tabanlı akış geri getirildi).
-        - "Sepete git (N)" bağlantısı.
-        - Butonlar sadeleşti, etiket "Hediş · hediye asistanı" oldu.
-    - **Sepet:**
-        - Not alanı ve hediye paketi seçeneği.
-        - "Siparişi WhatsApp'tan gönder" butonu.
-        - "Sepeti boşalt".
-    - **Ürün sayfası:**
-        - Sipariş bilgisi bloğu.
-        - Kaydırmalı galeri ve tam ekran görüntüleyici.
-        - Mobilde yapışkan "Sepete ekle".
-    - **Ürün verisi:**
-        - Adlar düzeltildi (ör. "Handmade Kol Çantası" → "Kapaklı Örgü Omuz Çantası"), adresler de buna göre değişti.
-        - Açıklamalar "sen" diliyle yeniden yazıldı, "Öne çıkanlar" dolduruldu.
-        - "Kadın Giyim (Handmade)" kategorisi "Giyim" oldu.
-    - **Metin:** Üst bant ve hero'ya "3 iş gününde kargoda" ve "rengini sen seç" vaadi taşındı.
-    - **Yeni sayfalar:** "Nasıl sipariş verilir?" + SSS, Hakkımızda (KOSGEB vurgulu), kategori sayfaları; ana sayfaya hikâye şeridi.
-    - **Vitrin araması.**
-    - **404:** artık header ve footer'la açılıyor.
-    - **Admin:** kaydedilmemiş değişiklik uyarısı.
-17. **Supabase'e geçiş:**
-    - "Database için Supabase kullanacağız" dendi ve bağlantı bilgileri verildi.
-    - Supabase boştu. Şema Prisma migration'larıyla kuruldu, ürünler `urun-aktar --blob-yok` ile taşındı, yerel `.env` Supabase'e çevrildi.
-    - `urun-aktar` betiğinde bir hata düzeltildi: özel günler, etiketler, "öne çıkanlar" ve yapay zeka modeli ayarı taşınmıyordu.
-    - README ve KVKK metni Neon yerine Supabase'e göre güncellendi.
-18. **GitHub:** Bu oturumun değişiklikleri `demo-cilasi` dalına pushlandı. `main`'e birleştirme senin onayına bırakıldı.
+8. **Yeni bilgisayar:**
+   - Proje zip olarak indirildi (`C:\DEVPACKS\hediyegetir.com-main`).
+   - Bu bilgisayarda Docker ve WSL yok. "Docker kuralım" fikri, eksik bağımlılık olmadığı anlaşılınca bırakıldı.
+9. **Ürünler ikas'tan son kez çekildi:** 7 ürün ve 9 fotoğraf alındı. Projede ikas'a bağ kalmadı.
+10. **48 maddelik acımasız inceleme yapıldı.** Kullanıcı demo için önemli maddeleri seçti. Uygulananlar:
+    - **Hediş:** Rehber modu (yapay zekasız), "Sepete git", sade düğmeler.
+    - **Sepet:** Not ve hediye paketi, "Siparişi WhatsApp'tan gönder", "Sepeti boşalt".
+    - **Ürün sayfası:** Sipariş bilgisi, kaydırmalı galeri, mobil yapışkan çubuk.
+    - **Ürün verisi:** Adlar düzeltildi (ör. "Handmade Kol Çantası" → "Kapaklı Örgü Omuz Çantası"). Açıklamalar "sen" diliyle yazıldı. Kategori "Giyim" oldu.
+    - **Yeni sayfalar:** "Nasıl sipariş verilir?", Hakkımızda, kategori sayfaları.
+    - **Diğer:** Vitrin araması, 404'e header/footer, admin'de kaydedilmemiş değişiklik uyarısı.
+11. **Supabase'e geçildi.** `npx prisma dev` eşzamanlı bağlantılarda kopup kilitlendiği için bırakıldı. Şema migration'larla kuruldu, ürünler `urun-aktar --blob-yok` ile taşındı.
+
+**8 Ekim akşamı: testler, arayüz turu, teslim öncesi inceleme**
+
+12. **Bütün testler baştan sona çalıştırıldı.** Bulunan ve düzeltilenler:
+    - **Admin girişi bozuktu:** `.env`'deki bcrypt hash'inde `$` işaretleri kaçışsızdı (bkz. 6. bölüm).
+    - **Yapışkan çubuk:** Ani kaydırmada açılmıyordu.
+    - **Hediş düğmesi:** Footer'ın üstüne biniyordu.
+    - **Kontrast:** Erişilebilirlik taramasında yetersiz çıkan yerler vardı.
+13. **Arayüz turu (commit `c8582f7`):**
+    - Admin Kategoriler sayfası kart görünümüne geçti.
+    - Hediş ortalandı ve tatlılaştı: sallanan maskot, konuşma balonu, etiket biçimli seçenekler.
+    - Kullanıcının isteğiyle Hediş **tamamen çerçevesiz ve saydam** yapıldı: kare panel yok, başlık ya da "Kapat" yazısı yok, dışarı tıklayınca kapanıyor.
+    - Ana sayfaya yeni hero geldi (polaroid kolaj + maskot balonu).
+    - Hakkımızda'ya atölye videosu yerleştirildi.
+    - Footer'daki "Gezin" bağlantıları üstte hap biçimli bir **menü çubuğuna** da taşındı. Footer'dakiler şimdilik duruyor.
+14. **Teslim öncesi inceleme:** Daha önce önerilmemiş 15 madde çıkarıldı. Kullanıcı 2, 3, 4, 6, 14 ve 15'i seçti; yapıldı (commit `3084c1b` + veritabanı):
+    - **(2)** 7 ürünün Hediş etiketleri gözden geçirilip onaylandı:
+      - Özel günler ve anahtar kelimeler eklendi.
+      - Kıyafetlerden "iş arkadaşı" ve "öğretmen", elbise ile granny süveterden "büyükanne" çıkarıldı.
+    - **(3)** Admin'deki teknik yazılar kaldırıldı ("yerel mod: public/uploads", anahtar uyarısı). Model alanı "Gelişmiş"e taşındı.
+    - **(4)** Ürün sayfasında üç kez tekrar eden "renk tercihini sepette not olarak yaz" bilgisi teke indi.
+    - **(6)** Bütün stoklar "sipariş üzerine" yapıldı.
+    - **(14)** Admin mobil menüsü düzeltildi: "Çıkış" artık görünüyor, menü 320 px'e sığıyor.
+    - **(15)** iPhone ana ekran ikonu eklendi.
+    - **Seçilmeyen ya da sahibine bağlı maddeler:** Prod modda demo, indirimli fiyatlar, Instagram, WhatsApp numarasını doğrulama, telefondan gösterme, demo akışı, yeni admin şifresi, fotoğraf yedeği. 0. bölümde listelendi.
+15. **Ziyaret istatistikleri sıfırlandı.** Testler sayacı 500'ün üstüne çıkarmıştı.
+16. **OpenAI anahtarı:** Kullanıcı eski anahtarı `.env`'e kendisi ekledi; anahtar iptal edilmemiş, kullanılmaya devam ediyor. Hediş sohbeti ve admin'de fotoğraftan doldurma gerçek modelle denendi, çalışıyor.
+17. **GitHub:** Her şey `demo-cilasi`'ye pushlandı, ardından `main`'e fast-forward ile birleştirildi (`3084c1b`).
+
+**8 Ekim gecesi: bu bilgisayar (IPv6 yok)**
+
+18. **Supabase bağlantısı:** Bu bilgisayarda IPv6 olmadığı için doğrudan adres çalışmıyor. `.env` pooler adreslerine geçirildi (`aws-1-eu-central-1.pooler.supabase.com`, uygulama 6543, CLI 5432).
+19. **Ana sayfa:** Polaroid kolajın köşesindeki maskot ve "Kime hediye arıyorsun?" balonu kaldırıldı.
+20. **Ürün ekranı baştan + yeni alanlar:** `Product.galleryLayout` (TEK/IKILI/UCLU) ve `Product.stampText` eklendi (migration `20261008190000_urun_galeri_damga`), aynı akşam çoklu damga için `Product.stamps` listesine çevrildi (`20261008210000_urun_coklu_damga`, eski değerler taşındı). İkisi de Supabase'e uygulandı. Mevcut ürünler TEK ve "El yapımı" ile aynı görünüyor.
+21. **Admin oturumu:** `getAdminSession` jeton doğrulamadan önce `await connection()` çağırıyor; Next'in "prerender sırasında new Date()" uyarısı bu yüzden çıkıyordu.
+22. **Hediş ve ürün sayfası turu:** Büyük "Sepete git", devam et / baştan başla, gereksiz katalog tekrarı yok; yeni fotoğraf görüntüleyici ve küçülen fotoğraf sütunu; admin ürün listesi kartlara geçti.
+23. **Onay pencereleri:** Tarayıcının `confirm()` kutuları yerine sitenin tarzında tek pencere (`confirmDialog` + `ConfirmHost`, kök yerleşimde): sepeti boşalt, ürün/kategori sil, kaydedilmemiş değişiklik. Sekme kapatma/yenilemedeki uyarı tarayıcının kendisi, değiştirilemez.
+24. **Genel mağaza dili:** Site artık yalnızca el işi değil, hazır ürün de satıyor. Genel metinlerde (ana sayfa başı, alt bilgi, kategori sayfaları, sipariş adımları, site başlığı, yapay zeka talimatları) el yapımı/örgü vurgusu kaldırıldı. El yapımı vurgusu yalnızca **damgalı** ürünlerde: ürün sayfasında "Senin için elde yapılır" satırı damga varsa çıkıyor. Yeni ürünler damgasız başlıyor (`20261008230000_damga_varsayilan_bos`). Hakkımızda'daki kurucu hikâyesi korundu, "her parça elde örülür" gibi iddialar düzeltildi.
+25. **Sepet:** "Siparişi WhatsApp'tan gönder"e basınca sepet (not ve hediye paketi dahil) boşalıyor; yerine "Siparişin WhatsApp'ta hazır!" notu ve "Sepetini geri getir" bağlantısı çıkıyor.
 
 ---
 
 ## 4. Açık konular
 
-1. **Şifre ve anahtarları yenile (güvenlik, acil):**
-   - **Supabase veritabanı şifresi** bu oturumda sohbette paylaşıldı. Yenile ve `.env`'deki `DATABASE_URL` ile `DIRECT_URL`'e yaz.
-   - OpenAI (`sk-proj-…`) ve OpenRouter (`sk-or-…`) anahtarları önceki oturumda sohbette paylaşılmıştı. İptal edip yenilerini oluştur; OpenAI projesine aylık harcama limiti koy. OpenRouter artık kullanılmıyor.
-   - Bu bilgisayarın `.env`'inde yapay zeka anahtarı yok. Yeni `OPENAI_API_KEY`'i eklersen Hediş sohbet moduna döner, admin'deki fotoğraftan öneri de açılır.
-2. **Fotoğraflar:**
-   - Supabase'de `/uploads/...` adresiyle duruyorlar ve yalnızca bu bilgisayarda (`public/uploads`, git'e girmiyor).
-   - Vercel'e çıkmadan önce Vercel Blob'a ya da Supabase Storage'a yüklenmeleri gerekiyor. Bu bilgisayar giderse fotoğraflar da gider; istersen GitHub'a eklenebilir (yaklaşık 1,2 MB).
+1. **Sen/siz dili:** Yapay zeka açıklamaları "siz", site "sen" diliyle. Karar bekleniyor (0. bölüm).
+2. **Fotoğraflar:** Yedeksiz ve yalnızca bu bilgisayarda. Yayından önce Blob ya da Supabase Storage'a taşınmalı.
 3. **Yayına alma (Aşama 10):**
-    - Vercel hesabı (repoyu bağla + Blob deposu).
-    - Supabase pooler adresleri: `DATABASE_URL` = Transaction pooler (6543), `DIRECT_URL` = Session pooler (5432).
-    - Yayında kullanılacak admin şifresi.
-    - hediyegetir.com DNS erişimi.
-    - Ortam değişkenleri: `OPENAI_API_KEY`, `HEDIS_DAILY_LIMIT` (isteğe bağlı).
-
-    Adımlar README'de.
-4. **Site sahibinden alınacaklar:**
-    - KVKK: işletme adı, adres, e-posta (`src/app/(site)/kvkk/page.tsx`).
-    - Kargo ücreti (`src/lib/site.ts` → `ORDER_INFO.shipping`).
-    - Ödeme yöntemleri ve iade/değişim koşulları (SSS). Şu an dürüstçe "WhatsApp'ta netleştiriyoruz" yazıyor.
-
-    Metinleri bir hukukçuya da göstermeni öneririm; özellikle yapay zeka, yurt dışı aktarım ve mesafeli satış kısımlarını.
-5. **Hediş etiketleri:** 7 ürünün hepsinde aynı tahmini "kime uygun" listesi var ve hiçbiri onaylı değil. Admin'de "Etiketi onaysız" filtresiyle gözden geçirilmeli.
-6. **Hediş maliyeti:** Herkese açık sohbet, tur başına küçük de olsa bakiye harcıyor. IP başına 10 dakikada 30 istek ve günde toplam 1500 istek sınırı var (`HEDIS_DAILY_LIMIT`). Bakiye bitse bile Hediş artık rehber moduna geçiyor.
-7. **Admin şifresi:** Bu bilgisayardaki yerel şifre yalnızca `.env`'de (hash olarak) duruyor ve sohbette sana iletildi; bu dosyaya bilerek yazılmadı. Yayında farklı bir şifre kullanılmalı.
-8. **Admin E2E testleri:** Bu oturumda çalıştırılmadı. Veritabanına geçici ürün yazdıkları için demo veritabanında değil, ayrı bir test veritabanında çalıştırmak daha doğru olur.
+   - Vercel hesabı (repoyu bağla + Blob deposu).
+   - Supabase pooler adresleri: `DATABASE_URL` = Transaction pooler (6543), `DIRECT_URL` = Session pooler (5432).
+   - Ortam değişkenleri: `OPENAI_API_KEY`, `HEDIS_DAILY_LIMIT` (isteğe bağlı).
+   - Yayında farklı bir admin şifresi; hediyegetir.com DNS erişimi.
+   - Adımlar README'de.
+4. **Site sahibinden alınacaklar:** KVKK işletme bilgileri, kargo ücreti, ödeme ve iade koşulları, Instagram, indirimli fiyatlar hakkında karar. Metinleri bir hukukçuya da göstermek iyi olur; özellikle yapay zeka, yurt dışı aktarım ve mesafeli satış kısımlarını.
+5. **Supabase veritabanı şifresi:** Sohbette paylaşıldı. Yenilenmesi önerildi, karar kullanıcıda.
+6. **Küçük şeyler:**
+   - 320 px'lik çok dar telefonlarda ürün sayfasında süs bandı yüzünden 2–3 px yatay taşma var.
+   - Footer'daki "Gezin" bağlantıları üst menüyle tekrar ediyor; kaldırılabilir.
+   - Hakkımızda videosu mobil veri için biraz ağır (4,8 MB). Yalnızca oynatılınca iniyor; istenirse sıkıştırılmış bir sürüm yapılabilir.
 
 ---
 
 ## 5. Commit geçmişi
 
-| Commit | Ne yapıldı |
-| --- | --- |
-| `cd5005e` | Aşama 0: kurulum (Next.js 16, Tailwind v4, Prisma 7, Docker Postgres) |
-| `657f585` | Aşama 1: veri modeli, Hediş sınıflandırması, seed |
-| `02c7999` | Aşama 2: ikas içe aktarma (sonradan kaldırıldı) |
-| `12d0f24` | Aşama 3: tasarım sistemi ve ortak bileşenler |
-| `20b2bb3` | Aşama 4: mağaza ve ürün detay |
-| `38a9599` | Sepet depolama hatası düzeltmesi |
-| `dcf38ef` | Aşama 5: sepet ve WhatsApp |
-| `32e740d` | Aşama 6: admin paneli |
-| `5080893` | Aşama 7: Hediş (kural tabanlı ilk sürüm) |
-| `44e03c1` | Aşama 8: ziyaret kaydı ve admin özeti |
-| `6058f9d` | Aşama 9: SEO, erişilebilirlik, hata sayfaları |
-| `5f3ccf2` | Yayına alma hazırlığı |
-| `444a22e` | ikas kaldırıldı, ürün aktarma betiği |
-| `20a892f` | Hediş açılır pencere, ana sayfa = mağaza |
-| `1003bfa` | Admin'de fotoğraftan AI önerisi |
-| `853304f` | Varsayılan model OpenAI gpt-6-luna |
-| `5e76d49` | Geniş düzen ve yeni filtre alanı |
-| `b770cbe` | Admin ürün ekranı baştan, AI destekli |
-| `66a5233` | Hediş yapay zekayla konuşuyor |
-| `9eadbe4` | KVKK'ya Hediş/OpenAI bilgisi + bu özet (`main`'in son hâli) |
-| (son, `demo-cilasi`) | Demo cilası: Hediş rehber modu, arama, kategori sayfaları, sepet notu, yeni sayfalar, Supabase |
+| Commit      | Ne yapıldı                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------- |
+| `cd5005e` | Aşama 0: kurulum (Next.js 16, Tailwind v4, Prisma 7, Docker Postgres)                            |
+| `657f585` | Aşama 1: veri modeli, Hediş sınıflandırması, seed                                           |
+| `02c7999` | Aşama 2: ikas içe aktarma (sonradan kaldırıldı)                                              |
+| `12d0f24` | Aşama 3: tasarım sistemi ve ortak bileşenler                                                   |
+| `20b2bb3` | Aşama 4: mağaza ve ürün detay                                                                 |
+| `38a9599` | Sepet depolama hatası düzeltmesi                                                                |
+| `dcf38ef` | Aşama 5: sepet ve WhatsApp                                                                       |
+| `32e740d` | Aşama 6: admin paneli                                                                            |
+| `5080893` | Aşama 7: Hediş (kural tabanlı ilk sürüm)                                                     |
+| `44e03c1` | Aşama 8: ziyaret kaydı ve admin özeti                                                          |
+| `6058f9d` | Aşama 9: SEO, erişilebilirlik, hata sayfaları                                                  |
+| `5f3ccf2` | Yayına alma hazırlığı                                                                        |
+| `444a22e` | ikas kaldırıldı, ürün aktarma betiği                                                        |
+| `20a892f` | Hediş açılır pencere, ana sayfa = mağaza                                                     |
+| `1003bfa` | Admin'de fotoğraftan AI önerisi                                                                 |
+| `853304f` | Varsayılan model OpenAI gpt-6-luna                                                               |
+| `5e76d49` | Geniş düzen ve yeni filtre alanı                                                               |
+| `b770cbe` | Admin ürün ekranı baştan, AI destekli                                                         |
+| `66a5233` | Hediş yapay zekayla konuşuyor                                                                   |
+| `9eadbe4` | KVKK'ya Hediş/OpenAI bilgisi + bu özet                                                          |
+| `fdb6678` | Demo cilası: Hediş rehber modu, arama, kategori sayfaları, sepet notu, yeni sayfalar, Supabase |
+| `c8582f7` | Arayüz: üst menü çubuğu, yeni ana sayfa başı, çerçevesiz Hediş, Hakkımızda videosu    |
+| `3084c1b` | Teslim öncesi admin cilası ve iPhone ikonu (`main`'in şu anki hâli)                         |
+
+Veritabanında yapılan değişikliklerin (etiket onayı, stok, açıklamalar, ziyaret sıfırlama) commit karşılığı yok. Bunlar doğrudan Supabase'te yapıldı.
 
 ---
 
-## 6. Yerelde çalıştırma (hatırlatma)
+## 6. Yerelde çalıştırma, testler ve tuzaklar
 
 ```bash
 npm install
 npm run dev          # http://localhost:3000  ·  admin: /admin  (veritabanı: Supabase, .env'de)
-npm test             # birim testleri
+npm test             # 91 birim testi (vitest)
 npm run typecheck
+npm run lint
 ```
 
-- **Uçtan uca testler:** `npx playwright test --project=masaustu --project=mobil`. Chromium bu bilgisayarda kurulu.
-  - Hediş sohbet testleri yapay zekayı taklit eder ama dev sunucusunda bir `OPENAI_API_KEY` tanımlı olmalı; sahte bir değer yeter. Örnek: `OPENAI_API_KEY=sahte npm run dev`.
-  - Admin testleri için `E2E_ADMIN_PASSWORD` gerekir.
-- **Prisma şeması** değiştikten sonra çalışan dev sunucusunu yeniden başlatmak gerekir; eski veritabanı istemcisi bellekte kalıyor.
-- **Veritabanına doğrudan yapılan değişiklikler** (betikler) katalog önbelleğinde en geç bir saat sonra görünür. Hemen görmek için dev sunucusunu yeniden başlat.
-- **Docker'lı kurulum** (başka bir bilgisayarda) README'de anlatılıyor: `npm run db:up` + `npm run db:migrate`.
+**Gerekli dosyalar** bu bilgisayarda duruyor, git'e girmiyor:
+
+- `.env`: Supabase adresleri, admin şifre hash'i, OpenAI anahtarı.
+- `public/uploads`: ürün fotoğrafları.
+
+Başka bir bilgisayarda devam edeceksen bu ikisini de taşıman gerekir.
+
+**Uçtan uca testler (Playwright, 51 test: masaüstü + mobil + admin):**
+
+- Son durum: 50 geçti, 1'i bilerek atlanıyor.
+  - Sepet testi aynı anda çok sayfa derlenirken ara sıra zaman aşımına düşüyor; tek başına çalıştırınca geçiyor.
+- **Yapay zeka testleri** modeli taklit ediyor, ama dev sunucusunda bir `OPENAI_API_KEY` tanımlı olmalı. Gerçek anahtar artık `.env`'de; yoksa sahte bir değerle başlat: `OPENAI_API_KEY=sahte npm run dev`.
+- **Admin testleri:**
+  - Şifre ister: `E2E_ADMIN_PASSWORD=... npx playwright test`.
+  - Yalnızca admin testlerini çalıştırmak için: `--project=admin --no-deps`. Normalde vitrin testleri bitmeden admin testleri başlamıyor.
+- **Testlerin yan etkileri:**
+  - Ziyaret sayacını şişiriyorlar; demodan önce sıfırla.
+  - `public/uploads`'a 200 bayttan küçük deneme PNG'leri bırakıyorlar; testten sonra sil.
+  - Ayarlar'daki WhatsApp numarasını yeniden yazıyorlar.
+  - Geçici ürünleri kendileri siliyorlar.
+
+**Bu bilgisayardaki tuzaklar (Windows + Git Bash):**
+
+- **`.env`'deki bcrypt hash'i** `$` işaretlerini `\$` olarak kaçışlı tutmalı. Yoksa Next'in env okuyucusu `$2b...` kısımlarını değişken sanıp bozuyor ve admin girişi çalışmıyor.
+- **Git Bash yolları:** `/` ile başlayan argümanları Windows yoluna çeviriyor (ör. `/videos/...`). Gerekirse komutun başına `MSYS_NO_PATHCONV=1` ekle.
+- **Takılı dev sunucusu:** "Another next dev server is already running" hatası çıkarsa, komut satırında `hediyegetir.com-main\node_modules` ve `next` geçen eski süreçleri kapat.
+- **Şema değişikliği:** Prisma şeması değiştikten sonra dev sunucusunu yeniden başlat; eski veritabanı istemcisi bellekte kalıyor.
+- **npm gürültüsü:** `npm install` bazen `package-lock.json`'da yalnızca npm sürümünden kaynaklanan değişiklik bırakıyor. Gerçek bir paket değişikliği yoksa `git checkout package-lock.json` ile geri al.

@@ -69,8 +69,8 @@ test.describe("girişli", () => {
 
     await page.goto("/admin/urunler?q=E2E");
     await page.getByRole("link", { name }).click();
-    page.once("dialog", (d) => d.accept());
     await page.getByRole("button", { name: "Ürünü sil" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Evet, sil" }).click();
     await expect(page.getByText("Ürün silindi.")).toBeVisible();
     await page.goto("/");
     await expect(page.getByRole("heading", { name })).toHaveCount(0);
@@ -168,8 +168,8 @@ test.describe("girişli", () => {
 
     // Temizlik: oluşturulan kategoriyi sil
     await page.goto("/admin/kategoriler");
-    page.once("dialog", (d) => d.accept());
     await page.locator("li").filter({ has: page.locator(`input[value="${yeniKategori}"]`) }).getByRole("button", { name: "Sil" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Evet, sil" }).click();
     await expect(page.locator(`input[value="${yeniKategori}"]`)).toHaveCount(0);
   });
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { aiConfigured } from "@/lib/ai/client";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { DEFAULT_STAMPS } from "@/lib/product-display";
 import { ProductForm } from "../ProductForm";
 
 export const metadata: Metadata = { title: "Yeni ürün" };
@@ -35,6 +36,8 @@ export default async function NewProductPage() {
           tags: [],
           features: [],
           images: [],
+          galleryLayout: "TEK",
+          stamps: DEFAULT_STAMPS,
         }}
         categories={categories}
         blobEnabled={!!process.env.BLOB_READ_WRITE_TOKEN}

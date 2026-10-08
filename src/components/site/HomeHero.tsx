@@ -16,7 +16,7 @@ const POLAROIDS = [
 
 const icon = "size-5 shrink-0 text-kiremit";
 
-/** Ana sayfanın başı: solda vaat ve düğmeler, sağda ürün fotoğraflarından polaroid kolaj ve Hediş. */
+/** Ana sayfanın başı: solda vaat ve düğmeler, sağda ürün fotoğraflarından polaroid kolaj. */
 export async function HomeHero() {
   const products = await getHeroProducts();
 
@@ -27,12 +27,12 @@ export async function HomeHero() {
           <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden>
             <path d="M12 21s-7.5-4.6-7.5-10.2C4.5 7.6 6.9 5.5 9.4 5.5c1.3 0 2.2.6 2.6 1.4.4-.8 1.3-1.4 2.6-1.4 2.5 0 4.9 2.1 4.9 5.3C19.5 16.4 12 21 12 21Z" />
           </svg>
-          el yapımı · kadın emeği
+          özenle seçilir · sevgiyle paketlenir
         </p>
         <h1 className="mt-5 max-w-2xl text-[2.35rem] leading-[1.06] sm:text-6xl sm:leading-[1.04]">
-          Elde örülen, <Scribble>sevgiyle</Scribble> paketlenen hediyeler
+          Sevdiklerin için <Scribble>sevgiyle</Scribble> paketlenen hediyeler
         </h1>
-        <p className="mt-5 font-el text-2xl text-murekkep-soluk sm:text-3xl">rengini sen seç, senin için örelim</p>
+        <p className="mt-5 font-el text-2xl text-murekkep-soluk sm:text-3xl">kime ne alacağını bilemiyorsan Hediş&apos;e sor</p>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <a href="#urunler" className="btn btn-ana">
@@ -46,11 +46,11 @@ export async function HomeHero() {
 
         <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2.5 text-[0.95rem] font-semibold text-murekkep-soluk">
           <li className="flex items-center gap-2">
-            <svg viewBox="0 0 24 24" className={icon} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-              <circle cx="12" cy="12" r="8.5" />
-              <path d="M5.5 8.5c4 0 9 2.5 11.5 7.5M4 13c3.5-.5 8 1 10 5.5M9 3.8c1.5 3 5.5 6 11.3 6.7" strokeLinecap="round" />
+            <svg viewBox="0 0 24 24" className={icon} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden>
+              <rect x="3.5" y="9" width="17" height="11" rx="1" />
+              <path d="M2.5 9h19M12 9v11M12 9c-1.5-3.5-6-4-6-1.5S10 9 12 9Zm0 0c1.5-3.5 6-4 6-1.5S14 9 12 9Z" />
             </svg>
-            İstediğin renkte örülür
+            Hediye paketi seçeneği
           </li>
           <li className="flex items-center gap-2">
             <svg viewBox="0 0 24 24" className={icon} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden>
@@ -70,7 +70,7 @@ export async function HomeHero() {
 
       {products.length > 0 && (
         <div className="relative mx-auto aspect-[1/0.92] w-full max-w-[21rem] sm:max-w-[30rem] lg:max-w-[34rem]">
-          {/* zemin: yumuşak daire, yün yumağı, kalpler ve kıvrılan iplik */}
+          {/* zemin: yumuşak daire, hediye kutusu, kalpler ve kıvrılan kurdele */}
           <span aria-hidden className="absolute inset-[9%] rounded-full bg-hardal/20" />
           <svg aria-hidden viewBox="0 0 400 370" className="absolute inset-0 size-full overflow-visible">
             <path
@@ -82,10 +82,11 @@ export async function HomeHero() {
               strokeLinecap="round"
               opacity=".55"
             />
-            <g transform="translate(330 300) rotate(-12)">
-              <circle r="26" fill="var(--color-gul)" stroke="var(--color-murekkep)" strokeWidth="2.5" />
-              <path d="M-22-12c14 4 30 16 36 32M-25 4c12-2 28 4 38 18M-8-25c4 12 4 30-2 46M8-24c-6 14-6 30 2 46" fill="none" stroke="var(--color-murekkep)" strokeWidth="1.8" opacity=".55" />
-              <path d="M24 10c14 6 22 18 20 34" fill="none" stroke="var(--color-murekkep)" strokeWidth="2" strokeLinecap="round" />
+            <g transform="translate(330 300) rotate(-10)" stroke="var(--color-murekkep)" strokeWidth="2.5" strokeLinejoin="round">
+              <rect x="-24" y="-14" width="48" height="36" rx="2" fill="var(--color-gul)" />
+              <rect x="-28" y="-24" width="56" height="12" rx="2" fill="var(--color-gul)" />
+              <path d="M0-24v46" fill="none" />
+              <path d="M0-24c-6-14-22-14-18-4 3 6 18 4 18 4Zm0 0c6-14 22-14 18-4-3 6-18 4-18 4Z" fill="var(--color-hardal)" />
             </g>
             <path d="M190 18c0-5 6-7 8.5-2.5 2.5-4.5 8.5-2.5 8.5 2.5 0 6-8.5 11-8.5 11s-8.5-5-8.5-11Z" fill="var(--color-kiremit)" opacity=".75" />
             <path d="M372 150c0-3.6 4.3-5 6-1.8 1.8-3.2 6-1.8 6 1.8 0 4.3-6 7.8-6 7.8s-6-3.5-6-7.8Z" fill="var(--color-gul)" />
@@ -120,19 +121,6 @@ export async function HomeHero() {
               </Link>
             );
           })}
-
-          {/* Köşeden bakan Hediş: balona dokununca pencere açılır */}
-          <div className="absolute -bottom-3 -left-3 z-30 sm:-left-6">
-            <HedisOpenButton className="group relative block text-left">
-              <span className="absolute bottom-[86%] left-[62%] rounded-2xl border-2 border-murekkep bg-kagit px-3 py-1.5 font-el text-lg leading-tight whitespace-nowrap shadow-baski-sm transition-transform group-hover:-translate-y-0.5 sm:text-xl">
-                Kime hediye arıyorsun?
-                <span aria-hidden className="absolute -bottom-[7px] left-4 size-3 rotate-45 border-r-2 border-b-2 border-murekkep bg-kagit" />
-              </span>
-              <span className="inline-block animate-sallan">
-                <Mascot mood="idle" decorative className="size-20 sm:size-24" />
-              </span>
-            </HedisOpenButton>
-          </div>
         </div>
       )}
     </section>

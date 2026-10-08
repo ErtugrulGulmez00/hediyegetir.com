@@ -40,6 +40,8 @@ export default async function EditProductPage(props: PageProps<"/admin/urunler/[
     tags: product.tags,
     features: product.features,
     images: product.images.map((i) => ({ id: i.id, url: i.url, alt: i.alt, isBlob: i.isBlob })),
+    galleryLayout: product.galleryLayout,
+    stamps: product.stamps,
   };
 
   return (

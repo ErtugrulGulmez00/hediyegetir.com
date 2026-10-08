@@ -49,4 +49,29 @@ describe("parseProductForm", () => {
   it("javascript: gibi görsel adreslerini reddeder", () => {
     expect(parseProductForm({ ...base, images: [{ url: "javascript:alert(1)", alt: "", isBlob: false }] }).ok).toBe(false);
   });
+
+  it("düzen ve damga verilmezse varsayılanları kullanır", () => {
+    const r = parseProductForm(base);
+    expect(r.ok && r.data.galleryLayout).toBe("TEK");
+    expect(r.ok && r.data.stamps).toEqual([]);
+  });
+
+  it("damgaları kırpar, tekrarı atar; boş listeye izin verir", () => {
+    const custom = parseProductForm({ ...base, galleryLayout: "UCLU", stamps: ["  Ev   yapımı ", "Kadın işi", "Ev yapımı"] });
+    expect(custom.ok && custom.data.stamps).toEqual(["Ev yapımı", "Kadın işi"]);
+    expect(custom.ok && custom.data.galleryLayout).toBe("UCLU");
+    const none = parseProductForm({ ...base, stamps: [] });
+    expect(none.ok && none.data.stamps).toEqual([]);
+  });
+
+  it("uzun damgayı ve 3'ten fazla damgayı reddeder", () => {
+    const long = parseProductForm({ ...base, stamps: ["x".repeat(21)] });
+    expect(!long.ok && long.errors.stamps).toMatch(/Damga/);
+    const many = parseProductForm({ ...base, stamps: ["a", "b", "c", "d"] });
+    expect(!many.ok && many.errors.stamps).toMatch(/3 damga/);
+  });
+
+  it("bilinmeyen fotoğraf düzenini reddeder", () => {
+    expect(parseProductForm({ ...base, galleryLayout: "DORTLU" as "TEK" }).ok).toBe(false);
+  });
 });

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession, verifySession } from "./auth-token";
 import { db } from "./db";
 
@@ -13,7 +14,10 @@ const WINDOW_MINUTES = 15;
 const DUMMY_HASH = "$2b$12$.7klDnS9/KPtHOpGw.LRwO6eaQU4V/GdsFnPij.hPspvNphe2vjoS";
 
 export async function getAdminSession() {
-  return verifySession((await cookies()).get(SESSION_COOKIE)?.value);
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  // Jeton doğrulaması süre kontrolü için şimdiki zamanı okur; ön işleme (prerender) sırasında değil, gerçek istekte çalışsın
+  await connection();
+  return verifySession(token);
 }
 
 /** Sayfalar ve server action'lar için: oturum yoksa giriş sayfasına yönlendirir. */

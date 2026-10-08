@@ -1,13 +1,24 @@
 "use client";
 
+import { confirmDialog } from "@/store/confirm";
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { AiOneriRequest, AiOneriResponse } from "@/app/api/admin/ai-oneri/route";
 import { AiBadge } from "@/components/ai/AiBits";
+import { Stamp } from "@/components/ui/Stamp";
 import type { ProductFormInput } from "@/lib/admin/product-input";
 import { mergeSuggestion, type AiField } from "@/lib/ai/merge";
 import { HOBBIES, OCCASIONS, RECIPIENTS, type GenderKey } from "@/lib/hedis/config";
 import { parsePriceInput } from "@/lib/money";
+import {
+  effectiveLayout,
+  GALLERY_LAYOUTS,
+  MAX_STAMPS,
+  STAMP_MAX_LENGTH,
+  STAMP_PRESETS,
+  STAMP_ROTATIONS,
+  type GalleryLayoutKey,
+} from "@/lib/product-display";
 import { slugify } from "@/lib/slug";
 import { createCategoryQuickAction, deleteProductAction, saveProductAction, type ProductFormState } from "../../actions";
 import { Field, inputClass } from "../ui";
@@ -34,6 +45,8 @@ export type ProductFormInitial = {
   tags: string[];
   features: string[];
   images: { id: string; url: string; alt: string; isBlob: boolean }[];
+  galleryLayout: GalleryLayoutKey;
+  stamps: string[];
 };
 
 type Form = ProductFormInitial;
@@ -217,6 +230,8 @@ export function ProductForm({
     tags: v.tags,
     features: v.features,
     images: images.filter((i) => !i.uploading).map(({ id, url, alt, isBlob }) => ({ id, url, alt, isBlob })),
+    galleryLayout: v.galleryLayout,
+    stamps: v.stamps,
   };
 
   // Kaydedilmemiş değişiklik varken sayfadan ayrılırken uyar. Kayıttan sonra form yeniden kurulduğu için
@@ -259,15 +274,19 @@ export function ProductForm({
   ) : null;
 
   return (
-    <form action={formAction} className="pb-16">
+    <form action={formAction} className="pb-8">
       <input type="hidden" name="payload" value={JSON.stringify(payload)} />
 
-      {/* Üst çubuk: kaydet her zaman görünür */}
-      <div className="sticky top-0 z-30 -mx-4 mb-6 flex flex-wrap items-center gap-3 border-b-2 border-murekkep bg-krem/95 px-4 py-3 sm:-mx-8 sm:px-8">
+      {/* Üst çubuk: kaydet ve yayın anahtarları her zaman görünür */}
+      <div className="sticky top-0 z-30 -mx-4 mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-b-2 border-murekkep bg-krem/95 px-4 py-2.5 backdrop-blur-sm sm:-mx-8 sm:px-8">
         <Link href="/admin/urunler" className="text-sm text-murekkep-soluk hover:underline">
           ← Ürünler
         </Link>
-        <h1 className="min-w-0 flex-1 truncate font-baslik text-2xl">{v.name.trim() || (isNew ? "Yeni ürün" : "Ürün")}</h1>
+        <h1 className="min-w-0 flex-1 truncate font-baslik text-xl sm:text-2xl">{v.name.trim() || (isNew ? "Yeni ürün" : "Ürün")}</h1>
+        <div className="order-last flex w-full items-center gap-5 sm:order-none sm:w-auto">
+          <Switch label="Yayında" checked={v.isActive} onChange={(c) => set("isActive", c)} />
+          <Switch label="Öne çıkan" checked={v.isFeatured} onChange={(c) => set("isFeatured", c)} />
+        </div>
         {!isNew && (
           <a href={`/urun/${initial.slug}`} target="_blank" rel="noopener" className="link-el text-sm font-semibold">
             Sitede gör ↗
@@ -279,13 +298,17 @@ export function ProductForm({
       </div>
 
       {state.message && (
-        <p role="alert" className="mb-5 border-l-4 border-kiremit bg-kagit px-4 py-3 font-semibold">
+        <p role="alert" className="mb-4 border-l-4 border-kiremit bg-kagit px-4 py-3 font-semibold">
           {state.message}
         </p>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
-        <div className="flex min-w-0 flex-col gap-6">
+      {/*
+        Geniş ekranda üç sütun: fotoğraf + görünüm | ürün bilgileri | AI + Hediş.
+        Orta boyda sol sütunda fotoğraflar ve bilgiler alt alta, sağda AI + Hediş.
+      */}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_21rem] xl:grid-cols-[19rem_minmax(0,1fr)_22rem]">
+        <div className="flex min-w-0 flex-col gap-4 lg:col-start-1 lg:row-start-1">
           <Section title="Fotoğraflar">
             <PhotoUploader
               images={images}
@@ -296,53 +319,57 @@ export function ProductForm({
               error={err.images}
             />
           </Section>
-
-          {/* Mobilde AI kutusu fotoğrafların hemen altında */}
-          {aiPanel && <div className="lg:hidden">{aiPanel}</div>}
-
-          <Section title="Ürün bilgileri">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Ürün adı" error={err.name} className="sm:col-span-3" labelExtra={badge("name")}>
-                <input className={inputClass} value={v.name} onChange={(e) => set("name", e.target.value)} required placeholder="Ör. Kişiye özel ahşap kalem" />
-              </Field>
-              <Field label="Satış fiyatı (₺)" error={err.price} hint="Ör. 1.250 ya da 1250,50">
-                <input className={inputClass} inputMode="decimal" value={v.price} onChange={(e) => set("price", e.target.value)} required />
-              </Field>
-              <Field label="Eski fiyat (₺)" error={err.compareAtPrice} hint="İndirim varsa; üstü çizili görünür">
-                <input className={inputClass} inputMode="decimal" value={v.compareAtPrice} onChange={(e) => set("compareAtPrice", e.target.value)} />
-              </Field>
-              <Field label="Stok" error={err.stock} hint="Boş = sipariş üzerine, 0 = tükendi">
-                <input className={inputClass} inputMode="numeric" value={v.stock} onChange={(e) => set("stock", e.target.value)} />
-              </Field>
-              <Field label="Açıklama" error={err.description} className="sm:col-span-3" labelExtra={badge("description")}>
-                <textarea className={`${inputClass} min-h-32`} value={v.description} onChange={(e) => set("description", e.target.value)} />
-              </Field>
-              <div className="sm:col-span-3">
-                <FeatureList values={v.features} onChange={(list) => set("features", list)} badge={badge("features")} error={err.features} />
-              </div>
-            </div>
-            <details className="mt-5 text-sm">
-              <summary className="cursor-pointer font-semibold text-murekkep-soluk hover:text-murekkep">Gelişmiş: sayfa adresi</summary>
-              <Field label="Adres (slug)" error={err.slug} hint={`hediyegetir.com/urun/${slugify(v.slug || v.name) || "…"}`} className="mt-3">
-                <input className={inputClass} value={v.slug} placeholder="Boş bırakırsan addan üretilir" onChange={(e) => set("slug", e.target.value)} />
-              </Field>
-            </details>
+          <Section title="Ürün sayfasında görünüm">
+            <LayoutPicker value={v.galleryLayout} onChange={(l) => set("galleryLayout", l)} images={images} />
+            <StampPicker values={v.stamps} onChange={(list) => set("stamps", list)} error={err.stamps} />
           </Section>
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-6">
-          {aiPanel && <div className="hidden lg:block">{aiPanel}</div>}
+        {/* Mobilde AI kutusu fotoğrafların hemen altında */}
+        {aiPanel && <div className="lg:hidden">{aiPanel}</div>}
 
-          <Section title="Kategori" titleExtra={badge("category")}>
-            <select aria-label="Kategori" className={inputClass} value={v.categoryId} onChange={(e) => set("categoryId", e.target.value)}>
-              <option value="">Kategorisiz</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </Section>
+        <Section title="Ürün bilgileri" className="lg:col-start-1 lg:row-start-2 xl:col-start-2 xl:row-start-1">
+          <div className="grid gap-x-3 gap-y-4 sm:grid-cols-2 2xl:grid-cols-4">
+            <Field label="Ürün adı" error={err.name} className="sm:col-span-2 2xl:col-span-4" labelExtra={badge("name")}>
+              <input className={inputClass} value={v.name} onChange={(e) => set("name", e.target.value)} required placeholder="Ör. Kişiye özel ahşap kalem" />
+            </Field>
+            <Field label="Satış fiyatı (₺)" error={err.price}>
+              <input className={inputClass} inputMode="decimal" value={v.price} onChange={(e) => set("price", e.target.value)} required placeholder="Ör. 1.250" />
+            </Field>
+            <Field label="Eski fiyat (₺)" error={err.compareAtPrice} hint="Varsa üstü çizili görünür">
+              <input className={inputClass} inputMode="decimal" value={v.compareAtPrice} onChange={(e) => set("compareAtPrice", e.target.value)} />
+            </Field>
+            <Field label="Stok" error={err.stock} hint="0 = tükendi">
+              <input className={inputClass} inputMode="numeric" value={v.stock} onChange={(e) => set("stock", e.target.value)} placeholder="Sipariş üzerine" />
+            </Field>
+            <Field label="Kategori" labelExtra={badge("category")}>
+              <select className={inputClass} value={v.categoryId} onChange={(e) => set("categoryId", e.target.value)}>
+                <option value="">Kategorisiz</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Açıklama" error={err.description} className="sm:col-span-2 2xl:col-span-4" labelExtra={badge("description")}>
+              <textarea className={`${inputClass} min-h-32`} value={v.description} onChange={(e) => set("description", e.target.value)} />
+            </Field>
+            <div className="sm:col-span-2 2xl:col-span-4">
+              <FeatureList values={v.features} onChange={(list) => set("features", list)} badge={badge("features")} error={err.features} />
+            </div>
+          </div>
+          <details className="mt-4 text-sm">
+            <summary className="cursor-pointer font-semibold text-murekkep-soluk hover:text-murekkep">Gelişmiş: sayfa adresi</summary>
+            <Field label="Adres (slug)" error={err.slug} hint={`hediyegetir.com/urun/${slugify(v.slug || v.name) || "…"}`} className="mt-3">
+              <input className={inputClass} value={v.slug} placeholder="Boş bırakırsan addan üretilir" onChange={(e) => set("slug", e.target.value)} />
+            </Field>
+          </details>
+        </Section>
+
+        {/* Sağ sütun yapışık ve kendi içinde kayar; sayfa boyu yalnızca en uzun sol/orta sütun kadar */}
+        <aside className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:pb-1 xl:col-start-3 xl:row-span-1">
+          {aiPanel && <div className="hidden lg:block">{aiPanel}</div>}
 
           <Section title="Hediş için" titleExtra={badge("audience")} hint="Hediş bu bilgilerle ürünü doğru kişiye önerir.">
             <Group label="Kime uygun?">
@@ -389,7 +416,7 @@ export function ProductForm({
                     role="radio"
                     aria-checked={v.gender === g}
                     onClick={() => set("gender", g)}
-                    className={`rounded-full px-3 py-1 text-sm font-semibold ${v.gender === g ? "bg-murekkep text-kagit" : "hover:bg-krem-koyu"}`}
+                    className={`rounded-full px-3 py-0.5 text-sm font-semibold ${v.gender === g ? "bg-murekkep text-kagit" : "hover:bg-krem-koyu"}`}
                   >
                     {label}
                   </button>
@@ -405,30 +432,29 @@ export function ProductForm({
             <Group label="Etiketler" extra={badge("tags")}>
               <ChipInput values={v.tags} onChange={(list) => set("tags", list)} error={err.tags} />
             </Group>
-            <label className="mt-1 flex items-center gap-2 border-t-2 border-dashed border-kraft pt-4 font-semibold">
+            <label className="flex items-center gap-2 border-t-2 border-dashed border-kraft pt-3 font-semibold">
               <input type="checkbox" className="size-4 accent-kiremit" checked={v.hedisReviewed} onChange={(e) => set("hedisReviewed", e.target.checked)} />
               Etiketleri kontrol ettim
             </label>
           </Section>
 
-          <Section title="Yayın">
-            <div className="flex flex-col gap-3">
-              <Switch label="Sitede yayında" checked={v.isActive} onChange={(c) => set("isActive", c)} />
-              <Switch label="Öne çıkan (listelerde başta)" checked={v.isFeatured} onChange={(c) => set("isFeatured", c)} />
-            </div>
-            {!isNew && (
-              <button
-                type="button"
-                className="mt-5 text-sm font-semibold text-kiremit-koyu hover:underline"
-                onClick={async () => {
-                  const msg = `"${initial.name}" silinsin mi? Bu geri alınamaz. Yalnızca gizlemek istiyorsan "Sitede yayında" anahtarını kapatman yeterli.`;
-                  if (confirm(msg)) await deleteProductAction(initial.id!);
-                }}
-              >
-                Ürünü sil
-              </button>
-            )}
-          </Section>
+          {!isNew && (
+            <button
+              type="button"
+              className="self-start px-1 text-sm font-semibold text-kiremit-koyu hover:underline"
+              onClick={async () => {
+                const ok = await confirmDialog({
+                  title: `"${initial.name}" silinsin mi?`,
+                  message: 'Bu geri alınamaz. Yalnızca gizlemek istiyorsan "Yayında" anahtarını kapatman yeterli.',
+                  confirmLabel: "Evet, sil",
+                  danger: true,
+                });
+                if (ok) await deleteProductAction(initial.id!);
+              }}
+            >
+              Ürünü sil
+            </button>
+          )}
         </aside>
       </div>
     </form>
@@ -439,34 +465,52 @@ function Section({
   title,
   titleExtra,
   hint,
+  className = "",
   children,
 }: {
   title: string;
   titleExtra?: React.ReactNode;
   hint?: string;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="kagit rounded-xl p-5 sm:p-6">
-      <h2 className="flex items-center font-baslik text-xl">
+    <section className={`kagit min-w-0 rounded-xl p-4 ${className}`}>
+      <h2 className="flex items-center font-baslik text-lg leading-tight">
         {title}
         {titleExtra}
       </h2>
-      {hint && <p className="mt-1 text-sm text-murekkep-soluk">{hint}</p>}
-      <div className="mt-4">{children}</div>
+      {hint && <p className="mt-0.5 text-sm text-murekkep-soluk">{hint}</p>}
+      <div className="mt-3">{children}</div>
     </section>
   );
 }
 
 function Group({ label, extra, children }: { label: string; extra?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <fieldset className="mb-5">
-      <legend className="mb-2 flex items-center text-sm font-bold">
+    <fieldset className="mb-4">
+      <legend className="mb-1.5 flex items-center text-sm font-bold">
         {label}
         {extra}
       </legend>
       {children}
     </fieldset>
+  );
+}
+
+function Chip({ on, onClick, disabled, children }: { on: boolean; onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-full border-[1.5px] px-2.5 py-0.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+        on ? "border-murekkep bg-murekkep text-kagit" : "border-kraft-koyu/60 bg-kagit enabled:hover:border-murekkep"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -481,23 +525,157 @@ function ToggleGroup({
 }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {options.map((o) => {
-        const on = selected.includes(o.key);
+      {options.map((o) => (
+        <Chip key={o.key} on={selected.includes(o.key)} onClick={() => onToggle(o.key)}>
+          {o.label}
+        </Chip>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Ürün sayfasındaki damgalar (en fazla 3): hazır yazılar aç/kapa, kendi yazını ekle; üstte canlı önizleme.
+ * Hiç damga seçilmezse ürün sayfasında damga görünmez.
+ */
+function StampPicker({ values, onChange, error }: { values: string[]; onChange: (v: string[]) => void; error?: string }) {
+  const [draft, setDraft] = useState("");
+  const full = values.length >= MAX_STAMPS;
+  const custom = values.filter((t) => !(STAMP_PRESETS as readonly string[]).includes(t));
+  const toggle = (t: string) => onChange(values.includes(t) ? values.filter((x) => x !== t) : [...values, t]);
+  const add = () => {
+    const t = draft.trim().replace(/\s+/g, " ");
+    if (t && !full && !values.includes(t)) onChange([...values, t]);
+    setDraft("");
+  };
+
+  return (
+    <div className="mt-4 border-t-2 border-dashed border-kraft pt-4">
+      <p className="flex items-baseline justify-between gap-2 text-sm font-bold">
+        Damgalar
+        <span className="text-xs font-normal text-murekkep-soluk">
+          {values.length}/{MAX_STAMPS} · başlığın yanında
+        </span>
+      </p>
+      <div aria-hidden className="mt-2 flex h-20 items-center justify-center rounded-lg bg-krem-koyu/60">
+        {values.length > 0 ? (
+          <div className="flex origin-center scale-[0.8] -space-x-3">
+            {values.map((t, i) => (
+              <Stamp key={t} rotate={STAMP_ROTATIONS[i % STAMP_ROTATIONS.length]}>
+                {t}
+              </Stamp>
+            ))}
+          </div>
+        ) : (
+          <span className="font-el text-lg text-murekkep-soluk">damga yok</span>
+        )}
+      </div>
+      <div className="mt-2.5 flex flex-wrap gap-1.5" role="group" aria-label="Hazır damgalar">
+        {STAMP_PRESETS.map((p) => {
+          const on = values.includes(p);
+          return (
+            <Chip key={p} on={on} disabled={full && !on} onClick={() => toggle(p)}>
+              {p}
+            </Chip>
+          );
+        })}
+        {custom.map((t) => (
+          <Chip key={t} on onClick={() => toggle(t)}>
+            {t} <span aria-hidden>✕</span>
+          </Chip>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <input
+          aria-label="Kendi damga yazın"
+          value={draft}
+          maxLength={STAMP_MAX_LENGTH}
+          disabled={full}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              add();
+            }
+          }}
+          placeholder={full ? `En fazla ${MAX_STAMPS} damga` : "Kendi yazın, ör. Anne eli"}
+          className={`${inputClass} min-w-0 py-1.5 text-sm`}
+        />
+        <button type="button" onClick={add} disabled={full || !draft.trim()} className="btn btn-ikincil min-h-9 shrink-0 px-3 py-1 text-sm">
+          Ekle
+        </button>
+      </div>
+      {values.length > 0 && (
+        <button type="button" onClick={() => onChange([])} className="mt-2 text-xs font-semibold text-murekkep-soluk hover:text-kiremit-koyu hover:underline">
+          Damgasız yap
+        </button>
+      )}
+      {error && <p className="mt-1 text-sm font-semibold text-kiremit-koyu">{error}</p>}
+    </div>
+  );
+}
+
+/** Ürün sayfasında fotoğrafların dizilişi; her seçenek eldeki fotoğraflarla küçük bir önizleme gösterir */
+function LayoutPicker({ value, onChange, images }: { value: GalleryLayoutKey; onChange: (l: GalleryLayoutKey) => void; images: ImgItem[] }) {
+  const count = images.length;
+  const shown = effectiveLayout(value, count);
+  const current = GALLERY_LAYOUTS.find((l) => l.key === value)!;
+  return (
+    <div>
+      <p id="duzen-baslik" className="text-sm font-bold">
+        Fotoğraf düzeni
+      </p>
+      <div role="radiogroup" aria-labelledby="duzen-baslik" className="mt-2 grid grid-cols-3 gap-2">
+        {GALLERY_LAYOUTS.map((l) => {
+          const on = value === l.key;
+          return (
+            <button
+              key={l.key}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              title={l.hint}
+              onClick={() => onChange(l.key)}
+              className={`rounded-lg border-2 p-1 transition-colors ${on ? "border-murekkep bg-kagit shadow-baski-sm" : "border-kraft bg-kagit/50 hover:border-murekkep/60"}`}
+            >
+              <MiniGallery layout={l.key} images={images} />
+              <span className="mt-0.5 block text-sm font-semibold">{l.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-1.5 text-xs text-murekkep-soluk">
+        {shown !== value && count > 0
+          ? `${current.label} düzen için en az ${value === "UCLU" ? 3 : 2} fotoğraf gerekir; şimdilik ${shown === "TEK" ? "tek fotoğraf" : "ikili"} düzende görünür.`
+          : current.hint}
+      </p>
+    </div>
+  );
+}
+
+const MINI_CELLS: Record<GalleryLayoutKey, { grid: string; cells: string[] }> = {
+  TEK: { grid: "grid-cols-4 grid-rows-[1fr_auto]", cells: ["col-span-4", "aspect-square", "aspect-square", "aspect-square", "aspect-square"] },
+  IKILI: { grid: "grid-cols-2 grid-rows-2", cells: ["", "", "", ""] },
+  UCLU: { grid: "grid-cols-3 grid-rows-2", cells: ["col-span-2 row-span-2", "", ""] },
+};
+
+function MiniGallery({ layout, images }: { layout: GalleryLayoutKey; images: ImgItem[] }) {
+  const { grid, cells } = MINI_CELLS[layout];
+  return (
+    <span aria-hidden className={`grid aspect-square gap-0.5 overflow-hidden rounded-sm ${grid}`}>
+      {cells.map((cell, i) => {
+        const img = images[i];
+        const src = img ? img.url || img.preview : undefined;
         return (
-          <button
-            key={o.key}
-            type="button"
-            aria-pressed={on}
-            onClick={() => onToggle(o.key)}
-            className={`rounded-full border-[1.5px] px-2.5 py-1 text-sm font-semibold transition-colors ${
-              on ? "border-murekkep bg-murekkep text-kagit" : "border-kraft-koyu/60 bg-kagit hover:border-murekkep"
-            }`}
-          >
-            {o.label}
-          </button>
+          <span key={i} className={`relative overflow-hidden bg-krem-koyu ${cell}`}>
+            {src && (
+              // eslint-disable-next-line @next/next/no-img-element -- küçük önizleme; yüklenirken yerel blob adresi de gösterilir
+              <img src={src} alt="" className="absolute inset-0 size-full object-cover" />
+            )}
+          </span>
         );
       })}
-    </div>
+    </span>
   );
 }
 
@@ -619,7 +797,7 @@ function FeatureList({
 
 function Switch({ label, checked, onChange }: { label: string; checked: boolean; onChange: (c: boolean) => void }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-3 font-semibold">
+    <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
       {label}
       <input type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
       <span
