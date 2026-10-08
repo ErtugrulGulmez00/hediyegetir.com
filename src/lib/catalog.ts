@@ -78,6 +78,19 @@ export async function getShopProducts(filters: Filters): Promise<ProductCardData
   }));
 }
 
+/** Ana sayfanın başındaki fotoğraf kolajı: öne çıkanlar önce, fotoğrafı olan 3 ürün */
+export async function getHeroProducts() {
+  "use cache";
+  cacheTag(CATALOG_TAG);
+  cacheLife("hours");
+  return db.product.findMany({
+    where: { isActive: true, images: { some: {} } },
+    orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+    take: 3,
+    select: { slug: true, name: true, images: { take: 1, orderBy: { sortOrder: "asc" }, select: { url: true, alt: true } } },
+  });
+}
+
 /** Kategori sayfası için; yayında ürünü olmayan kategori yok sayılır */
 export async function getCategoryBySlug(slug: string) {
   "use cache";

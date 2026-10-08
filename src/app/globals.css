@@ -240,18 +240,27 @@
   transform-origin: center;
 }
 
-/* Hediş penceresi: aşağıdan hafifçe gelir */
+/*
+  Hediş penceresi: zemin belirerek gelir, içerik aşağıdan hafifçe kayar. Pencerenin kendisi kaymaz ki
+  açılır açılmaz boş bir yere tıklayan da (pencere ekranın tamamını kaplıyor) pencereyi kapatabilsin.
+*/
+@keyframes pencere-belir {
+  from {
+    opacity: 0;
+  }
+}
 @keyframes pencere-gel {
   from {
     opacity: 0;
     transform: translateY(16px) rotate(-0.4deg);
   }
 }
-.hedis-pencere[open] {
-  animation: pencere-gel 260ms ease-out;
-}
+.hedis-pencere[open],
 .hedis-pencere[open]::backdrop {
-  animation: pencere-gel 200ms ease-out;
+  animation: pencere-belir 200ms ease-out;
+}
+.hedis-pencere[open] > div {
+  animation: pencere-gel 260ms ease-out;
 }
 
 /* Hediş'in göz kırpması */

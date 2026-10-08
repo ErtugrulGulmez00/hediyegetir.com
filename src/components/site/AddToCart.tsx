@@ -60,13 +60,27 @@ export function AddToCart({
   const [scrolledPast, setScrolledPast] = useState(false);
   const setBarVisible = useStickyBuyBar((s) => s.setVisible);
 
-  // Ana "Sepete ekle" ekranın üstünden çıkınca mobilde alttan yapışkan çubuk açılır
+  // Ana "Sepete ekle" ekranın üstünden çıkınca mobilde alttan yapışkan çubuk açılır. IntersectionObserver
+  // yerine kaydırma dinlenir: sayfa butonu hiç göstermeden aşağı atlasa da (geri tuşu, çapa) çalışsın.
   useEffect(() => {
     const el = blockRef.current;
     if (!el) return;
-    const io = new IntersectionObserver(([e]) => setScrolledPast(!e.isIntersecting && e.boundingClientRect.top < 0));
-    io.observe(el);
-    return () => io.disconnect();
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      setScrolledPast(el.getBoundingClientRect().bottom < 0);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    schedule();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      cancelAnimationFrame(frame);
+    };
   }, []);
 
   useEffect(() => {
@@ -110,7 +124,11 @@ export function AddToCart({
       </p>
 
       {scrolledPast && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-murekkep bg-kagit px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
+        <div
+          role="region"
+          aria-label="Hızlı sepete ekle"
+          className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-murekkep bg-kagit px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden"
+        >
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{name}</p>

@@ -56,32 +56,26 @@ export function HedisDialog({ aiOnline }: { aiOnline: boolean }) {
       ref={ref}
       aria-labelledby="hedis-pencere-baslik"
       onClose={closeHedis}
-      // Yalnızca arka plana (dialog'un kendisine) tıklanınca kapan
+      // Çerçeve yok: Hediş, balonlar, düğmeler ve kartlar dışında bir yere tıklanınca kapan
       onClick={(e) => {
-        if (e.target === e.currentTarget) closeHedis();
+        const target = e.target as Element;
+        if (!target.closest("button, a, input, textarea, select, label, svg, [data-yuzey]")) closeHedis();
       }}
-      className="hedis-pencere m-0 h-dvh max-h-none w-full max-w-none border-0 bg-transparent p-0 backdrop:bg-murekkep/55 sm:m-auto sm:h-fit sm:max-h-[92dvh] sm:w-[calc(100%-3rem)] sm:max-w-4xl"
+      className="hedis-pencere m-0 h-dvh max-h-none w-full max-w-none overflow-y-auto overscroll-contain border-0 bg-transparent p-0 backdrop:bg-murekkep/85 backdrop:backdrop-blur-[3px]"
     >
-      <div className="relative min-h-full bg-krem px-4 pt-4 pb-10 sm:rounded-sm sm:border-2 sm:border-murekkep sm:px-8 sm:pt-6 sm:shadow-baski">
-        <div className="sticky top-0 z-20 -mx-4 mb-4 flex items-center justify-between gap-3 border-b-2 border-dashed border-kraft-koyu bg-krem px-4 py-2 sm:-mx-8 sm:px-8">
-          {/* Açılışta odak başlığa gelsin: ekran okuyucu pencereyi duyurur, Kapat butonunda göze batan çerçeve çıkmaz */}
-          <p
-            id="hedis-pencere-baslik"
-            tabIndex={-1}
-            autoFocus
-            className="flex items-center gap-2 font-el text-2xl text-kiremit-koyu outline-none"
-          >
-            <Mascot mood="idle" decorative className="size-9" />
-            Hediş&apos;e sor
-          </p>
-          <button
-            type="button"
-            onClick={closeHedis}
-            className="rounded-md border-2 border-murekkep bg-kagit px-3 py-1.5 text-sm font-bold shadow-baski-sm hover:bg-krem-koyu"
-          >
-            Kapat <span aria-hidden>✕</span>
-          </button>
-        </div>
+      <div className="relative mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
+        {/* Görünür başlık yok; ekran okuyucu pencereyi bu başlıkla duyurur, açılışta odak buraya gelir */}
+        <h2 id="hedis-pencere-baslik" tabIndex={-1} autoFocus className="sr-only">
+          Hediş&apos;e sor
+        </h2>
+        {/* Yalnızca klavyeyle odaklanınca görünür; fareyle dışarı tıklamak ya da Esc de kapatır */}
+        <button
+          type="button"
+          onClick={closeHedis}
+          className="sr-only rounded-md border-2 border-murekkep bg-kagit px-3 py-1.5 text-sm font-bold focus:not-sr-only focus:fixed focus:top-4 focus:right-4 focus:z-30"
+        >
+          Kapat <span aria-hidden>✕</span>
+        </button>
         {mounted &&
           (mode.kind === "ai" ? (
             <HedisChat onBrowseShop={browseShop} onFallback={(recipient) => setMode({ kind: "rehber", recipient, switched: true })} />

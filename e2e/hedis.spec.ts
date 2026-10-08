@@ -54,7 +54,8 @@ test("Hediş penceresi ana sayfada kendiliğinden açılır; yenileyince tekrar 
 
   await page.getByRole("navigation", { name: "Ana menü" }).getByRole("button", { name: /Hediş/ }).click();
   await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: /Kapat/ }).click();
+  // Çerçeve yok: Hediş ve kutuları dışında boş bir yere tıklayınca kapanır
+  await page.mouse.click(8, 8);
   await expect(dialog).toBeHidden();
 
   // Yüzen düğme üst menü görünürken gizli (aynı düğme iki kez durmasın); aşağı inince çıkar

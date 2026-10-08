@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { HedisOpenButton } from "@/components/hedis/HedisDialog";
 import { SiteShell } from "@/components/site/SiteShell";
 import { GiftIcon } from "@/components/ui/Logo";
 import { NotePaper } from "@/components/ui/NotePaper";
+
+export const metadata: Metadata = { title: "Sayfa bulunamadı" };
 
 // Kökteki 404, (site) layout'unun dışında render edilir; kabuğu (header, footer, sepet) kendisi kurar.
 export default function NotFound() {

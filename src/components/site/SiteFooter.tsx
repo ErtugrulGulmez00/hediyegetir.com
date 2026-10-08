@@ -48,7 +48,8 @@ export async function SiteFooter() {
           <Link href="/kvkk" className="hover:underline">KVKK ve çerezler</Link>
         </div>
       </div>
-      <p className="border-t border-murekkep/20 px-4 py-4 text-center text-sm text-murekkep">
+      {/* Mobilde alttaki boşluk: sağ alttaki yüzen Hediş düğmesi bu satırın üstüne binmesin */}
+      <p className="border-t border-murekkep/20 px-4 pt-4 pb-20 text-center text-sm text-murekkep sm:pb-4">
         © <CopyrightYear /> hediyegetir.com
       </p>
     </footer>

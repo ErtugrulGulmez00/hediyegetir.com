@@ -1,7 +1,10 @@
 // Admin formlarında ortak küçük parçalar (sunucu ve istemci bileşenlerinde kullanılabilir).
 
-export const inputClass =
-  "w-full rounded-md border-2 border-murekkep/70 bg-kagit px-3 py-2 text-base outline-none focus:border-murekkep focus-visible:outline-2 focus-visible:outline-dashed focus-visible:outline-kiremit";
+/** Genişlik içermez; dar alanlarda (ör. sıra numarası) genişliği çağıran verir */
+export const inputBase =
+  "rounded-md border-2 border-murekkep/70 bg-kagit px-3 py-2 text-base outline-none focus:border-murekkep focus-visible:outline-2 focus-visible:outline-dashed focus-visible:outline-kiremit";
+
+export const inputClass = `w-full ${inputBase}`;
 
 export function Field({
   label,

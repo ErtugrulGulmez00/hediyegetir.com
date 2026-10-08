@@ -10,10 +10,12 @@ import {
   HedisActions,
   HedisHeader,
   HedisNote,
+  HedisWelcome,
+  OptionTag,
+  OptionTags,
   readLastRecipient,
   Results,
   STARTERS,
-  starterChip,
   ThinkingDots,
   UserBubble,
   writeLastRecipient,
@@ -134,26 +136,33 @@ export function HedisChat({
   const quickReplies = !started ? null : !loading && last?.role === "assistant" ? (last.quickReplies ?? []) : [];
   const mood: MascotMood = loading ? "thinking" : lastAssistant?.products?.length ? "happy" : "talking";
 
+  const greeting = returning
+    ? `Yine hoş geldin! Geçen sefer ${returning} için bakmıştık. Bu sefer kime hediye arıyoruz?`
+    : "Merhaba, ben Hediş! Kime hediye alacağını bana anlat, gerisini birlikte bulalım.";
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col">
-      <HedisHeader mood={mood} bumpKey={entries.length} ai />
+      {started ? (
+        <HedisHeader mood={mood} bumpKey={entries.length} ai />
+      ) : (
+        <HedisWelcome mood={mood} bumpKey={entries.length} ai>
+          <p>{greeting}</p>
+          <p className="mt-1.5 text-sm text-murekkep-soluk">
+            Bir kişiye dokunabilir ya da kendi cümlenle yazabilirsin: &ldquo;Yeni işe başlayan kız arkadaşıma bir şey arıyorum&rdquo;
+            gibi.
+          </p>
+        </HedisWelcome>
+      )}
 
-      <ol aria-label="Hediş ile konuşma" aria-live="polite" className="mt-6 flex flex-col gap-4">
-        <li>
-          <HedisNote>
-            <p>
-              {returning
-                ? `Yine hoş geldin! Geçen sefer ${returning} için bakmıştık. Bu sefer kime hediye arıyoruz?`
-                : "Merhaba, ben Hediş! Kime hediye alacağını bana anlat, gerisini birlikte bulalım."}
-            </p>
-            {!started && (
-              <p className="mt-1.5 text-sm text-murekkep-soluk">
-                Bir seçeneğe dokunabilir ya da kendi cümlenle yazabilirsin: &ldquo;Yeni işe başlayan kız arkadaşıma bir şey
-                arıyorum&rdquo; gibi.
-              </p>
-            )}
-          </HedisNote>
-        </li>
+      {/* Canlı bölge baştan var olsun ki ilk mesajlar da ekran okuyucuya duyurulsun */}
+      <ol aria-label="Hediş ile konuşma" aria-live="polite" className={`flex flex-col gap-4 ${started ? "mt-6" : ""}`}>
+        {started && (
+          <li>
+            <HedisNote>
+              <p>{greeting}</p>
+            </HedisNote>
+          </li>
+        )}
 
         {entries.map((e, i) =>
           e.role === "user" ? (
@@ -188,7 +197,7 @@ export function HedisChat({
 
         {error && (
           <li>
-            <div role="alert" className="rounded-lg border-l-4 border-kiremit bg-kagit px-4 py-3">
+            <div role="alert" data-yuzey className="rounded-lg border-l-4 border-kiremit bg-kagit px-4 py-3">
               <p className="font-semibold">{error}</p>
               <div className="mt-2 flex flex-wrap gap-3 text-sm">
                 <button type="button" onClick={retry} className="font-semibold underline underline-offset-2">
@@ -209,26 +218,26 @@ export function HedisChat({
 
       {/* Hızlı cevaplar: başta kişiler, sonra Hediş'in önerdikleri */}
       {!started ? (
-        <div className="mt-5 flex flex-wrap gap-2" aria-label="Hızlı seçenekler">
-          {STARTERS.map((s) => (
-            <button
-              key={s.label}
-              type="button"
-              onClick={() => {
-                if (!s.text) return inputRef.current?.focus();
-                recipientRef.current = s.key;
-                void send(s.text);
-              }}
-              className={starterChip}
-            >
-              {s.label}
-            </button>
-          ))}
+        <div className="mt-6">
+          <OptionTags label="Hızlı seçenekler">
+            {STARTERS.map((s) => (
+              <OptionTag
+                key={s.label}
+                onClick={() => {
+                  if (!s.text) return inputRef.current?.focus();
+                  recipientRef.current = s.key;
+                  void send(s.text);
+                }}
+              >
+                {s.label}
+              </OptionTag>
+            ))}
+          </OptionTags>
         </div>
       ) : (
         quickReplies &&
         quickReplies.length > 0 && (
-          <div className="mt-4 flex flex-wrap justify-end gap-2" aria-label="Hazır cevaplar">
+          <div className="mt-5 flex flex-wrap justify-center gap-2" role="group" aria-label="Hazır cevaplar">
             {quickReplies.map((q) => (
               <button
                 key={q}
@@ -248,7 +257,7 @@ export function HedisChat({
           e.preventDefault();
           void send(draft);
         }}
-        className="sticky bottom-0 z-10 -mx-1 mt-5 bg-krem px-1 pt-2 pb-1"
+        className="sticky bottom-3 z-10 mt-5"
       >
         <div className="ai-kenar" data-calisiyor={loading ? "true" : "false"}>
           <div className="flex items-end gap-2 rounded-[0.75rem] bg-kagit p-2">
@@ -279,7 +288,7 @@ export function HedisChat({
           </div>
         </div>
         {!started && (
-          <p className="mt-2 text-xs text-murekkep-soluk">
+          <p className="mx-auto mt-2 w-fit rounded-full bg-murekkep px-3 py-1 text-center text-xs text-krem">
             Yazdıkların öneri için yapay zekayla işlenir; kişisel bilgi (ad, telefon, adres) paylaşma.{" "}
             <a href="/kvkk" target="_blank" rel="noopener" className="underline underline-offset-2">
               Ayrıntılar

@@ -9,15 +9,18 @@ function Hole() {
 const tone = (active: boolean) =>
   active ? "bg-murekkep text-kagit" : "bg-kagit text-murekkep hover:bg-krem-koyu hover:-translate-y-px";
 
-/** Hediye etiketi biçiminde seçim düğmesi (Hediş seçenekleri, filtreler). */
+/**
+ * Hediye etiketi biçiminde düğme (Hediş seçenekleri, filtreler). `active` verilirse açılıp kapanan
+ * seçim düğmesidir (aria-pressed); verilmezse tek tıklık eylem düğmesidir.
+ */
 export function TagChip({
-  active = false,
+  active,
   children,
   className = "",
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
   return (
-    <button type="button" aria-pressed={active} className={`${base} ${tone(active)} ${className}`} style={shape} {...props}>
+    <button type="button" aria-pressed={active} className={`${base} ${tone(!!active)} ${className}`} style={shape} {...props}>
       <Hole />
       {children}
     </button>

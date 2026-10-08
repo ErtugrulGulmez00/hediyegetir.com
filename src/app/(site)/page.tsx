@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { HedisAutoOpen, HedisOpenButton } from "@/components/hedis/HedisDialog";
+import { HedisAutoOpen } from "@/components/hedis/HedisDialog";
+import { HomeHero } from "@/components/site/HomeHero";
 import { ShopContent, ShopSkeleton } from "@/components/site/ShopSection";
 import { NotePaper } from "@/components/ui/NotePaper";
-import { Scribble } from "@/components/ui/Scribble";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -15,18 +15,7 @@ export default function HomePage(props: PageProps<"/">) {
     <div className="sayfa pt-6">
       {/* Ziyaretçiye oturum başına bir kez Hediş penceresini açar */}
       <HedisAutoOpen />
-      <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
-        <div>
-          <h1 className="max-w-2xl text-[2.1rem] leading-[1.08] sm:text-5xl">
-            Elde örülen, <Scribble>sevgiyle</Scribble> paketlenen hediyeler
-          </h1>
-          <p className="mt-4 font-el text-2xl text-murekkep-soluk">rengini sen seç, senin için örelim</p>
-        </div>
-        <div className="max-w-xs">
-          <p className="text-[0.95rem] text-murekkep-soluk">Kime ne alacağını bilemiyor musun? Hediş birkaç soruda seçsin.</p>
-          <HedisOpenButton className="btn btn-ikincil mt-3">Hediş&apos;e sor</HedisOpenButton>
-        </div>
-      </div>
+      <HomeHero />
       <Suspense fallback={<ShopSkeleton />}>
         <ShopContent searchParams={props.searchParams} />
       </Suspense>

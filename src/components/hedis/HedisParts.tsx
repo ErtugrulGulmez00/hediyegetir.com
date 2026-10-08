@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { HedisProduct } from "@/app/api/hedis/sohbet/route";
 import { AiSparkle } from "@/components/ai/AiBits";
 import { ProductCard } from "@/components/site/ProductCard";
-import { Tape } from "@/components/ui/Tape";
+import { TagChip } from "@/components/ui/TagChip";
 import { useCart, useCartCount } from "@/store/cart";
 import { Mascot, type MascotMood } from "./Mascot";
 
@@ -23,8 +23,15 @@ export const STARTERS: { key: string; label: string; text: string | null }[] = [
   { key: "diger", label: "Diğer", text: null },
 ];
 
-export const starterChip =
-  "rounded-full border-[1.5px] border-murekkep bg-kagit px-4 py-2 text-[0.95rem] font-semibold transition-colors hover:bg-murekkep hover:text-kagit";
+/** Seçenek düğmeleri: hediye etiketi biçiminde, ortalanmış */
+export function OptionTags({ children, label = "Seçenekler" }: { children: React.ReactNode; label?: string }) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap justify-center gap-2.5">
+      {children}
+    </div>
+  );
+}
+export { TagChip as OptionTag };
 
 const LAST_KEY = "hg_hedis_son";
 
@@ -44,34 +51,93 @@ export function writeLastRecipient(text: string) {
   }
 }
 
-/** Maskot ve ad. Yapay zeka kapalıyken "yapay zeka" iddiası taşımaz. */
-export function HedisHeader({ mood, bumpKey, ai }: { mood: MascotMood; bumpKey: number; ai: boolean }) {
+function AssistantBadge({ ai }: { ai: boolean }) {
   return (
-    <div className="flex items-center gap-3">
-      <Mascot mood={mood} bumpKey={bumpKey} className="size-16 shrink-0 sm:size-20" />
-      <div>
-        <p className="font-baslik text-2xl leading-tight">Hediş</p>
-        <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-hardal/25 px-2 py-0.5 text-xs font-bold text-kiremit-koyu">
-          {ai && <AiSparkle className="size-3.5" />} {ai ? "yapay zeka destekli hediye asistanı" : "hediye asistanı"}
-        </p>
+    <span className="inline-flex items-center gap-1 rounded-full bg-hardal px-2.5 py-0.5 text-xs font-bold text-murekkep">
+      {ai && <AiSparkle className="size-3.5" />} {ai ? "yapay zeka destekli hediye asistanı" : "hediye asistanı"}
+    </span>
+  );
+}
+
+/** Maskotun çevresindeki küçük süsler */
+function Doodles() {
+  return (
+    <svg aria-hidden viewBox="0 0 200 140" className="pointer-events-none absolute -inset-x-16 -top-3 h-[140%] w-[calc(100%+8rem)]">
+      <path d="M24 58c0-5 6-7 8.5-2.5C35 51 41 53 41 58c0 6-8.5 11-8.5 11S24 64 24 58Z" fill="var(--color-gul)" opacity=".7" />
+      <path d="M172 34l3 7.5 7.5 3-7.5 3-3 7.5-3-7.5-7.5-3 7.5-3Z" fill="var(--color-hardal)" className="ai-yildiz" />
+      <path d="M160 92c0-3.6 4.3-5 6-1.8 1.8-3.2 6-1.8 6 1.8 0 4.3-6 7.8-6 7.8s-6-3.5-6-7.8Z" fill="var(--color-kiremit)" opacity=".55" />
+      <path d="M44 104l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="var(--color-zeytin)" opacity=".6" />
+      <circle cx="150" cy="16" r="3" fill="var(--color-kiremit)" opacity=".4" />
+      <circle cx="40" cy="22" r="2.5" fill="var(--color-hardal)" opacity=".7" />
+    </svg>
+  );
+}
+
+/** Karşılama: ortada sallanan maskot, adı ve maskottan çıkan konuşma balonu */
+export function HedisWelcome({
+  mood,
+  bumpKey,
+  ai,
+  children,
+}: {
+  mood: MascotMood;
+  bumpKey: number;
+  ai: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center pt-2 text-center">
+      <div className="relative">
+        <span aria-hidden className="absolute inset-x-0 top-5 mx-auto size-28 rounded-full bg-hardal/45 sm:size-32" />
+        <Doodles />
+        <span className="relative inline-block animate-sallan">
+          <Mascot mood={mood} bumpKey={bumpKey} className="size-28 sm:size-32" />
+        </span>
+      </div>
+      <p data-yuzey className="font-baslik text-3xl leading-tight text-kagit drop-shadow-sm">
+        Hediş
+      </p>
+      <p data-yuzey className="mt-1">
+        <AssistantBadge ai={ai} />
+      </p>
+      <div data-yuzey className="relative mt-5 max-w-lg rounded-2xl border-2 border-murekkep bg-kagit px-5 py-4 text-[1.05rem] shadow-baski-sm">
+        <span aria-hidden className="absolute -top-[9px] left-1/2 size-4 -translate-x-1/2 rotate-45 border-t-2 border-l-2 border-murekkep bg-kagit" />
+        <span className="sr-only">Hediş: </span>
+        {children}
       </div>
     </div>
   );
 }
 
+/** Sohbet başladıktan sonraki küçük başlık */
+export function HedisHeader({ mood, bumpKey, ai }: { mood: MascotMood; bumpKey: number; ai: boolean }) {
+  return (
+    <div className="flex items-center justify-center gap-3">
+      <Mascot mood={mood} bumpKey={bumpKey} className="size-14 shrink-0" />
+      <div data-yuzey className="text-left">
+        <p className="font-baslik text-2xl leading-tight text-kagit">Hediş</p>
+        <AssistantBadge ai={ai} />
+      </div>
+    </div>
+  );
+}
+
+/** Hediş'in mesajı: küçük maskot avatarlı balon */
 export function HedisNote({ children }: { children: React.ReactNode }) {
   return (
-    <div className="kagit relative max-w-xl rounded-sm px-5 pt-6 pb-4">
-      <Tape color="gul" rotate={-4} className="-top-3 left-5 h-5 w-16" />
-      <span className="mb-1 flex items-center gap-1 font-el text-lg leading-none text-kiremit-koyu">Hediş</span>
-      {children}
+    <div className="flex max-w-xl items-end gap-2">
+      <Mascot mood="idle" decorative className="size-9 shrink-0" />
+      <div data-yuzey className="rounded-2xl rounded-bl-sm border-2 border-murekkep/15 bg-kagit px-4 py-3 shadow-kagit">
+        <span className="sr-only">Hediş: </span>
+        {children}
+      </div>
     </div>
   );
 }
 
 export function UserBubble({ children }: { children: React.ReactNode }) {
   return (
-    <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-murekkep px-4 py-2.5 text-kagit">
+    <p data-yuzey className="max-w-[85%] rounded-2xl rounded-br-sm border-2 border-kagit/30 bg-kiremit px-4 py-2.5 text-kagit">
       <span className="sr-only">Sen: </span>
       {children}
     </p>
@@ -91,7 +157,7 @@ export function ThinkingDots() {
 /** Önerilen ürünler. `chips`: Hediş'in anladıkları (kişi, gün, bütçe). */
 export function Results({ products, title, chips, ai }: { products: HedisProduct[]; title: string; chips: string[]; ai: boolean }) {
   return (
-    <div className="rounded-xl border-2 border-dashed border-kraft-koyu p-4 sm:p-5">
+    <div data-yuzey className="rounded-xl border-2 border-murekkep bg-krem p-4 shadow-baski sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-sm font-semibold text-murekkep-soluk">
           {ai && <AiSparkle className="size-4" />}
@@ -155,23 +221,22 @@ function ResultCard({ product, index, ai }: { product: HedisProduct; index: numb
 /** Pencerenin altındaki bağlantılar. Sepette ürün varsa sepete kestirme yol da çıkar. */
 export function HedisActions({ onRestart, onBrowseShop }: { onRestart?: () => void; onBrowseShop: () => void }) {
   const count = useCartCount();
-  const link = "underline-offset-2 hover:text-murekkep hover:underline";
+  // Saydam pencerede arkada ne olursa olsun okunsun: koyu kapsül üstünde açık renk
+  const link = "underline-offset-2 hover:text-kagit hover:underline";
   return (
-    <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm">
-      {onRestart ? (
-        <button type="button" onClick={onRestart} className={`text-murekkep-soluk ${link}`}>
-          Baştan başla
-        </button>
-      ) : (
-        <span />
-      )}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div className="mt-3 flex justify-center">
+      <div className="inline-flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl bg-murekkep px-5 py-2 text-sm">
+        {onRestart && (
+          <button type="button" onClick={onRestart} className={`text-krem ${link}`}>
+            ↺ Baştan başla
+          </button>
+        )}
         {count > 0 && (
-          <Link href="/sepet" className="font-bold text-kiremit-koyu underline-offset-2 hover:underline">
+          <Link href="/sepet" className="font-bold text-hardal underline-offset-2 hover:underline">
             Sepete git ({count}) →
           </Link>
         )}
-        <button type="button" onClick={onBrowseShop} className={`font-semibold text-murekkep-soluk ${link}`}>
+        <button type="button" onClick={onBrowseShop} className={`font-semibold text-krem ${link}`}>
           Diğer ürünlere göz at →
         </button>
       </div>

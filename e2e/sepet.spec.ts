@@ -48,6 +48,32 @@ test("mağazadan ürün seç → sepete ekle → WhatsApp linki ürünü içeriy
   await expect(page.getByText("Sepetin şimdilik boş.")).toBeVisible();
 });
 
+test("mobilde ürün sayfasının sonuna atlayınca yapışkan 'Sepete ekle' çıkar ve çalışır", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "Çubuk yalnızca mobilde");
+  await page.goto("/urun/kapakli-orgu-omuz-cantasi");
+  const bar = page.getByRole("region", { name: "Hızlı sepete ekle" });
+  await expect(bar).toHaveCount(0);
+
+  // Ana düğme hiç görünmeden sayfanın sonuna atla (geri tuşuyla dönüşteki kaydırma gibi)
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect(bar).toBeVisible();
+
+  // Yüzen Hediş düğmesi çubuğun üstüne kaymış olmalı (çakışmasın); kayma 200 ms'lik geçişle olur
+  const launcher = page.getByRole("button", { name: "Hediş, hediye asistanı", exact: true });
+  await expect(launcher).toBeVisible();
+  await expect
+    .poll(async () => {
+      const [b, l] = [await bar.boundingBox(), await launcher.boundingBox()];
+      return !!b && !!l && l.y + l.height <= b.y + 1;
+    })
+    .toBe(true);
+
+  await bar.getByRole("button", { name: "Sepete ekle" }).click();
+  await expect(page.getByRole("link", { name: /Sepet, 1 ürün/ })).toBeVisible();
+  await bar.getByRole("link", { name: /Sepete git/ }).click();
+  await expect(page).toHaveURL(/\/sepet$/);
+});
+
 test("sepeti boşalt onay ister, onaylanınca her şeyi temizler", async ({ page }) => {
   await page.goto("/");
   await page.locator("article").first().locator("h3 a").click();

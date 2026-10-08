@@ -9,10 +9,12 @@ import {
   HedisActions,
   HedisHeader,
   HedisNote,
+  HedisWelcome,
+  OptionTag,
+  OptionTags,
   readLastRecipient,
   Results,
   STARTERS,
-  starterChip,
   ThinkingDots,
   UserBubble,
   writeLastRecipient,
@@ -137,16 +139,27 @@ export function HedisRehber({
     answers.budget ? budgetByKey(answers.budget)?.label : null,
   ].filter((c): c is string => !!c);
 
+  const welcome = history.length === 0 && step === "recipient";
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col">
-      <HedisHeader mood={mood} bumpKey={history.length} ai={false} />
+      {welcome ? (
+        <HedisWelcome mood={mood} bumpKey={0} ai={false}>
+          <p>{switched ? MSG.switched : greeting}</p>
+        </HedisWelcome>
+      ) : (
+        <HedisHeader mood={mood} bumpKey={history.length} ai={false} />
+      )}
 
-      <ol aria-label="Hediş ile konuşma" aria-live="polite" className="mt-6 flex flex-col gap-4">
-        <li>
-          <HedisNote>
-            <p>{switched ? MSG.switched : greeting}</p>
-          </HedisNote>
-        </li>
+      {/* Canlı bölge baştan var olsun ki ilk sorular da ekran okuyucuya duyurulsun */}
+      <ol aria-label="Hediş ile konuşma" aria-live="polite" className={`flex flex-col gap-4 ${welcome ? "" : "mt-6"}`}>
+        {!welcome && (
+          <li>
+            <HedisNote>
+              <p>{switched ? MSG.switched : greeting}</p>
+            </HedisNote>
+          </li>
+        )}
 
         {history.map((h, i) => (
           <li key={i} className="flex flex-col gap-4">
@@ -200,7 +213,7 @@ export function HedisRehber({
 
         {step === "error" && (
           <li>
-            <div role="alert" className="rounded-lg border-l-4 border-kiremit bg-kagit px-4 py-3">
+            <div role="alert" data-yuzey className="rounded-lg border-l-4 border-kiremit bg-kagit px-4 py-3">
               <p className="font-semibold">{MSG.error}</p>
               <div className="mt-2 flex flex-wrap gap-3 text-sm">
                 <button type="button" onClick={() => finishHobbies(answers.hobbies ?? [])} className="font-semibold underline underline-offset-2">
@@ -216,89 +229,82 @@ export function HedisRehber({
       </ol>
       <div ref={endRef} />
 
-      {/* Seçenekler */}
-      <div className="mt-5" role="group" aria-label="Seçenekler">
+      {/* Seçenekler: ortada, hediye etiketi biçiminde */}
+      <div className="mt-6">
         {step === "recipient" && (
-          <div className="flex flex-wrap gap-2">
+          <OptionTags label="Hediye kime?">
             {STARTERS.map((s) => (
-              <button key={s.key} type="button" onClick={() => chooseRecipient(s.key)} className={starterChip}>
+              <OptionTag key={s.key} onClick={() => chooseRecipient(s.key)}>
                 {s.label}
-              </button>
+              </OptionTag>
             ))}
-          </div>
+          </OptionTags>
         )}
 
         {step === "gender" && (
-          <div className="flex flex-wrap justify-end gap-2">
+          <OptionTags label="Kadın mı erkek mi?">
             {(["KADIN", "ERKEK", null] as const).map((g) => (
-              <button
+              <OptionTag
                 key={String(g)}
-                type="button"
                 onClick={() => {
                   setAnswers((a) => ({ ...a, gender: g }));
                   setStep("budget");
                 }}
-                className={starterChip}
               >
                 {genderLabel(g)}
-              </button>
+              </OptionTag>
             ))}
-          </div>
+          </OptionTags>
         )}
 
         {step === "budget" && (
-          <div className="flex flex-wrap justify-end gap-2">
+          <OptionTags label="Bütçe">
             {[...BUDGETS.map((b) => ({ key: b.key as BudgetKey | null, label: b.label })), { key: null, label: "Fark etmez" }].map((b) => (
-              <button
+              <OptionTag
                 key={String(b.key)}
-                type="button"
                 onClick={() => {
                   setAnswers((a) => ({ ...a, budget: b.key }));
                   setHobbyDraft([]);
                   setStep("hobbies");
                 }}
-                className={starterChip}
               >
                 {b.label}
-              </button>
+              </OptionTag>
             ))}
-          </div>
+          </OptionTags>
         )}
 
         {step === "hobbies" && (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap justify-end gap-2">
+          <div className="flex flex-col items-center gap-4">
+            <OptionTags label={`İlgi alanları (en fazla ${MAX_HOBBIES})`}>
               {HOBBIES.map((h) => {
                 const on = hobbyDraft.includes(h.key);
                 return (
-                  <button
+                  <OptionTag
                     key={h.key}
-                    type="button"
-                    aria-pressed={on}
+                    active={on}
                     disabled={!on && hobbyDraft.length >= MAX_HOBBIES}
                     onClick={() => toggleHobby(h.key)}
-                    className={`rounded-full border-[1.5px] px-3.5 py-1.5 text-sm font-semibold transition-colors disabled:opacity-40 ${
-                      on ? "border-murekkep bg-murekkep text-kagit" : "border-murekkep bg-kagit hover:bg-krem-koyu"
-                    }`}
+                    className="disabled:opacity-40"
                   >
                     {h.label}
-                  </button>
+                  </OptionTag>
                 );
               })}
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-3">
-              <button type="button" onClick={() => finishHobbies([])} className="text-sm font-semibold underline underline-offset-2">
+            </OptionTags>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <button type="button" onClick={() => finishHobbies([])} className="rounded-full bg-murekkep px-3.5 py-1.5 text-sm font-semibold text-krem underline underline-offset-2 hover:text-kagit">
                 Emin değilim
               </button>
               <button type="button" onClick={() => finishHobbies(hobbyDraft)} disabled={hobbyDraft.length === 0} className="btn btn-ana min-h-10 py-1.5">
-                Önerileri göster
+                Önerileri göster {hobbyDraft.length > 0 && `(${hobbyDraft.length})`}
               </button>
             </div>
           </div>
         )}
       </div>
 
-      <div className="mt-5">
+      <div className="mt-6">
         <HedisActions onRestart={history.length > 0 ? restart : undefined} onBrowseShop={onBrowseShop} />
       </div>
     </div>

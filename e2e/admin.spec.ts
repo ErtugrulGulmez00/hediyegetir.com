@@ -78,7 +78,7 @@ test.describe("girişli", () => {
 
   test("fiyat değişikliği ürün sayfasında hemen görünür", async ({ page }) => {
     await login(page);
-    await page.goto("/admin/urunler?q=Kol");
+    await page.goto("/admin/urunler?q=Kapakl%C4%B1");
     await page.getByRole("link", { name: "Kapaklı Örgü Omuz Çantası" }).click();
     await page.getByLabel("Satış fiyatı (₺)").waitFor();
     const editUrl = page.url();

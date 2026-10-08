@@ -11,10 +11,13 @@ export function SiteHeader() {
         {ORDER_INFO.leadTimeDays} iş gününde kargoda
         <span className="hidden sm:inline"> · sipariş ve ödeme WhatsApp&apos;tan</span>
       </p>
-      <div className="sayfa flex items-center justify-between gap-2 py-4">
-        <Logo />
-        <div className="flex items-center gap-1.5 sm:gap-4">
-          <NavLinks />
+      {/* Mobilde menü çubuğu logo ve sepetin altında ikinci satıra iner (NavLinks'teki order) */}
+      <div className="sayfa flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-4 pb-2 md:flex-nowrap md:pb-4">
+        <div className="order-1">
+          <Logo />
+        </div>
+        <NavLinks />
+        <div className="order-2 md:order-3">
           <CartLink />
         </div>
       </div>
