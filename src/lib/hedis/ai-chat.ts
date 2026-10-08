@@ -8,6 +8,8 @@ import type { HedisAnswers } from "./recommend";
 export const MAX_TURNS = 14;
 export const MAX_MESSAGE_CHARS = 600;
 export const MAX_PICKS = 5;
+/** İlk öneriden önce sorulabilecek en fazla soru sayısı */
+export const MAX_QUESTIONS = 2;
 
 export type ChatTurn = { role: "user" | "assistant"; text: string };
 
@@ -45,14 +47,15 @@ export function catalogText(items: CatalogItem[]): string {
 }
 
 export function systemPrompt(catalog: string, productCount: number): string {
-  return `Sen "Hediş"sin: hediyelik ürünler satan hediyegetir.com'un sıcak, samimi hediye asistanı. Türkçe ve "sen" diliyle konuş.
+  return `Sen "Hediş"sin: hediyelik ürünler satan hediyegetir'in sıcak, samimi hediye asistanı. Türkçe ve "sen" diliyle konuş.
 Görevin: kullanıcıyı bir form doldurtmadan, sohbetle tanıyıp katalogdan en uygun hediyeleri bulmak.
 
 Kurallar:
 - Her mesajın kısa olsun (en fazla 2 cümle). Abartılı övgü ve emoji kullanma.
 - Her turda EN FAZLA BİR soru sor. Soruların kişiye ve kataloğa göre özgün olsun; aynı kalıbı herkese sorma.
   Örnek yönler: hediye alınan kişiyle ilişki, özel gün, bütçe, kişinin zevki/yaşam tarzı, kullanışlı mı duygusal mı hediye istediği.
-- Kullanıcı yeterince bilgi verdiyse ya da önerileri görmek isterse soru sormadan öner. En geç 4. kullanıcı mesajında mutlaka öner.
+- Öneriden önce EN FAZLA ${MAX_QUESTIONS} soru sor; ${MAX_QUESTIONS}. sorunun cevabı gelince artık soru sorma, mutlaka öner. Kullanıcı yeterince bilgi verdiyse ya da önerileri görmek isterse hiç soru sormadan hemen öner.
+- Bilmediğin ayrıntıları (bütçe, zevk) soru sormak yerine makul varsayımla tamamla; öneri sonrası kullanıcı isterse daraltırsın.
 - Yalnızca aşağıdaki katalogdaki ürünleri öner; id'leri aynen kullan. Bütçe verildiyse ona uy (en fazla %20 aşabilir, aşıyorsa nedeninde söyle).
 - Önerirken 1-${MAX_PICKS} ürün seç, en uygun olan önce. Her biri için bu kişiye NEDEN uygun olduğunu tek kısa cümleyle yaz.
 - Kullanıcı daha önce gösterdiğin ürünler hakkında bir şey sorarsa (fiyat, ölçü, renk, malzeme, kargo, hangisi daha iyi gibi) yalnızca yazıyla cevap ver: "oneriler" boş, "asama" "sohbet" olsun. Gösterdiğin ürünler geçmişte "[Önerdiğim ürünler: …]" olarak yazılı.
@@ -167,15 +170,34 @@ export function budgetKeyFor(maxKurus: number | null): BudgetKey | undefined {
 }
 
 /** AI ürün seçemediğinde kural tabanlı motora verilecek cevaplar. */
-export function profileToAnswers(p: ChatProfile): HedisAnswers | null {
-  if (!p.recipient) return null;
+export function profileToAnswers(p: ChatProfile, { anyRecipient = false } = {}): HedisAnswers | null {
+  if (!p.recipient && !anyRecipient) return null;
   return {
-    recipient: p.recipient,
+    recipient: p.recipient ?? "diger",
     gender: p.gender,
     budget: budgetKeyFor(p.budgetMaxKurus),
     hobbies: p.hobbies,
     occasion: p.occasion ?? undefined,
   };
+}
+
+/** Önerilen ürün listesi istemcide asistan mesajının sonuna bu işaretle eklenir */
+export const PICKS_MARKER = "[Önerdiğim ürünler:";
+
+/**
+ * Henüz hiç ürün önerilmediyse Hediş'in kaç soru sorduğu (asistan mesajı sayısı). Öneri yapıldıysa null:
+ * sonrası serbest sohbet, soru sınırı yalnızca ilk öneriye kadar geçerli.
+ */
+export function questionsBeforeFirstPick(turns: ChatTurn[]): number | null {
+  const assistant = turns.filter((t) => t.role === "assistant");
+  if (assistant.some((t) => t.text.includes(PICKS_MARKER))) return null;
+  return assistant.length;
+}
+
+/** Soru sınırı doldu mu: bu turda soru yerine mutlaka öneri yapılmalı */
+export function mustRecommend(turns: ChatTurn[]): boolean {
+  const asked = questionsBeforeFirstPick(turns);
+  return asked != null && asked >= MAX_QUESTIONS;
 }
 
 /** İstemciden gelen geçmişi temizler: boş/uzun mesajları kırpar, son MAX_TURNS turu alır. */

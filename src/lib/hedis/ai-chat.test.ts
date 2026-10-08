@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { budgetKeyFor, catalogText, parseChatReply, profileToAnswers, sanitizeTurns, systemPrompt } from "./ai-chat";
+import {
+  budgetKeyFor,
+  catalogText,
+  mustRecommend,
+  parseChatReply,
+  PICKS_MARKER,
+  profileToAnswers,
+  questionsBeforeFirstPick,
+  sanitizeTurns,
+  systemPrompt,
+} from "./ai-chat";
 
 const ids = new Set(["p1", "p2", "p3"]);
 
@@ -89,5 +99,29 @@ describe("yardımcılar", () => {
     const sys = systemPrompt(line, 1);
     expect(sys).toContain("Katalog (1 ürün");
     expect(sys).toContain("EN FAZLA BİR soru");
+    expect(sys).toContain("EN FAZLA 2 soru");
+  });
+});
+
+describe("soru sınırı", () => {
+  const u = (text: string) => ({ role: "user" as const, text });
+  const a = (text: string) => ({ role: "assistant" as const, text });
+
+  it("iki sorudan sonra öneri zorunlu", () => {
+    expect(mustRecommend([u("Annem için")])).toBe(false);
+    expect(mustRecommend([u("Annem için"), a("Ne seviyor?"), u("Kahve")])).toBe(false);
+    expect(mustRecommend([u("Annem için"), a("Ne seviyor?"), u("Kahve"), a("Bütçen?"), u("1000")])).toBe(true);
+  });
+
+  it("öneri yapıldıktan sonra sınır kalkar", () => {
+    const turns = [u("Annem için"), a(`Bunlar ${PICKS_MARKER} Çanta (p1)]`), u("Fiyatı?"), a("1.000 TL"), u("Rengi?")];
+    expect(questionsBeforeFirstPick(turns)).toBeNull();
+    expect(mustRecommend(turns)).toBe(false);
+  });
+
+  it("kişi bilinmese de zorunlu öneride 'diğer' ile cevap üretir", () => {
+    const p = { recipient: null, recipientText: null, gender: null, budgetMaxKurus: null, occasion: null, hobbies: [] };
+    expect(profileToAnswers(p)).toBeNull();
+    expect(profileToAnswers(p, { anyRecipient: true })?.recipient).toBe("diger");
   });
 });

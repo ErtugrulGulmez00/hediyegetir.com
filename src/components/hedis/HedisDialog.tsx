@@ -10,10 +10,11 @@ import { Mascot } from "./Mascot";
 
 type Mode = { kind: "ai" } | { kind: "rehber"; recipient: string | null; switched: boolean };
 
-/** Pencere bundan uzun kapalı kaldıysa yeniden açılınca "devam edelim mi?" diye sorulur */
-const ASK_RESUME_AFTER_MS = 2 * 60_000;
-/** Bundan uzun kapalı kaldıysa sohbet kendiliğinden baştan başlar */
-const RESET_AFTER_MS = 30 * 60_000;
+/**
+ * Pencere bundan uzun kapalı kaldıysa sohbet baştan başlar. Daha kısa sürede açılırsa (ör. yanlışlıkla
+ * dışarı tıklayıp hemen geri dönen) kaldığı yerden devam eder.
+ */
+const RESET_AFTER_MS = 15_000;
 
 const startMode = (aiOnline: boolean): Mode => (aiOnline ? { kind: "ai" } : { kind: "rehber", recipient: null, switched: false });
 
@@ -33,7 +34,6 @@ export function HedisDialog({ aiOnline }: { aiOnline: boolean }) {
   const [mode, setMode] = useState<Mode>(() => startMode(aiOnline));
   // Sohbetin anahtarı: değişince sohbet sıfırdan kurulur
   const [session, setSession] = useState(0);
-  const [askResume, setAskResume] = useState(false);
   const closedAt = useRef<number | null>(null);
 
   useEffect(() => {
@@ -44,9 +44,6 @@ export function HedisDialog({ aiOnline }: { aiOnline: boolean }) {
       if (away > RESET_AFTER_MS) {
         setSession((n) => n + 1);
         setMode(startMode(aiOnline));
-        setAskResume(false);
-      } else {
-        setAskResume(away > ASK_RESUME_AFTER_MS);
       }
       setMounted(true);
       d.showModal();
@@ -103,8 +100,6 @@ export function HedisDialog({ aiOnline }: { aiOnline: boolean }) {
               key={session}
               onBrowseShop={browseShop}
               onFallback={(recipient) => setMode({ kind: "rehber", recipient, switched: true })}
-              askResume={askResume}
-              onResumeAnswered={() => setAskResume(false)}
             />
           ) : (
             <HedisRehber key={session} onBrowseShop={browseShop} initialRecipient={mode.recipient} switched={mode.switched} />

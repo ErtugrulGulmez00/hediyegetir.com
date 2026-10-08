@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/money";
 import { Badge, Flash, inputClass, PageTitle } from "../ui";
 import { aiConfigured } from "@/lib/ai/client";
 import { ActiveToggle } from "./ActiveToggle";
+import { DeleteProductButton } from "./DeleteProductButton";
 import { EnrichButton } from "./EnrichButton";
 
 export const metadata: Metadata = { title: "Ürünler" };
@@ -103,10 +104,16 @@ export default async function AdminProducts(props: PageProps<"/admin/urunler">) 
                 ) : (
                   <span className="absolute inset-0 flex items-center justify-center font-el text-xl text-murekkep-soluk">fotoğraf yok</span>
                 )}
-                <div className="absolute inset-x-2 top-2 flex flex-wrap gap-1">
+                <div className="absolute top-2 right-12 left-2 flex flex-wrap gap-1">
                   {p.isFeatured && <Badge tone="kiremit">öne çıkan</Badge>}
                   {!p.hedisReviewed && <Badge tone="hardal">etiket onaysız</Badge>}
                 </div>
+                {/* Kart bağlantısının üstünde; masaüstünde karta gelince, dokunmatikte her zaman görünür */}
+                <DeleteProductButton
+                  productId={p.id}
+                  name={p.name}
+                  className="absolute top-2 right-2 z-10 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100"
+                />
               </div>
               <div className="flex flex-1 flex-col gap-1 p-3">
                 {/* Bağlantı bütün kartı kaplar; yayın anahtarı onun üstünde kalır */}

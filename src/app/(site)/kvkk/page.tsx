@@ -3,7 +3,7 @@ import { Scribble } from "@/components/ui/Scribble";
 
 export const metadata: Metadata = {
   title: "KVKK ve çerezler",
-  description: "hediyegetir.com kişisel verilerin korunması aydınlatma metni ve çerez bilgilendirmesi.",
+  description: "hediyegetir kişisel verilerin korunması aydınlatma metni ve çerez bilgilendirmesi.",
   alternates: { canonical: "/kvkk" },
 };
 

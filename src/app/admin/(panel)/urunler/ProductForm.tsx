@@ -19,6 +19,7 @@ import {
   STAMP_ROTATIONS,
   type GalleryLayoutKey,
 } from "@/lib/product-display";
+import { SITE_URL } from "@/lib/site";
 import { slugify } from "@/lib/slug";
 import { createCategoryQuickAction, deleteProductAction, saveProductAction, type ProductFormState } from "../../actions";
 import { Field, inputClass } from "../ui";
@@ -361,7 +362,7 @@ export function ProductForm({
           </div>
           <details className="mt-4 text-sm">
             <summary className="cursor-pointer font-semibold text-murekkep-soluk hover:text-murekkep">Gelişmiş: sayfa adresi</summary>
-            <Field label="Adres (slug)" error={err.slug} hint={`hediyegetir.com/urun/${slugify(v.slug || v.name) || "…"}`} className="mt-3">
+            <Field label="Adres (slug)" error={err.slug} hint={`${SITE_URL.replace(/^https?:\/\//, "")}/urun/${slugify(v.slug || v.name) || "…"}`} className="mt-3">
               <input className={inputClass} value={v.slug} placeholder="Boş bırakırsan addan üretilir" onChange={(e) => set("slug", e.target.value)} />
             </Field>
           </details>

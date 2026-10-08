@@ -86,7 +86,7 @@ model ProductImage {
 model Settings {
   id               Int      @id @default(1)
   whatsappNumber   String   @default("")
-  whatsappGreeting String   @default("Merhaba! hediyegetir.com üzerinden şu ürünlerle ilgileniyorum:")
+  whatsappGreeting String   @default("Merhaba! hediyegetir üzerinden şu ürünlerle ilgileniyorum:")
   instagramUrl     String   @default("")
   // Ürün fotoğrafından öneri üreten model (görüntü destekli). Adında "/" varsa OpenRouter, yoksa OpenAI.
   aiModel          String   @default("gpt-6-luna")

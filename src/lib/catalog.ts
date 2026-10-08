@@ -2,8 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "./db";
-import { budgetByKey, type BudgetKey } from "./hedis/config";
-import { matchesSearch, type Filters, type SortKey } from "./shop-filters";
+import { matchesSearch, type Filters, type PriceRange, type SortKey } from "./shop-filters";
 
 // Katalog okumaları önbellekli. Admin'deki değişiklikler updateTag(CATALOG_TAG) ile hemen tazeler;
 // veritabanına doğrudan yapılan değişiklikler (ör. urun-aktar betiği) en geç bir saatte görünür.
@@ -30,13 +29,26 @@ const cardSelect = {
 
 export type ProductCardData = Prisma.ProductGetPayload<{ select: typeof cardSelect }>;
 
-export function priceWhere(budget: BudgetKey | undefined): Prisma.IntFilter | undefined {
-  const b = budget ? budgetByKey(budget) : undefined;
-  if (!b) return undefined;
+/** TL aralığı → kuruş filtresi (iki uç da dahil) */
+export function priceWhere(r: PriceRange | undefined): Prisma.IntFilter | undefined {
+  if (!r || (r.min == null && r.max == null)) return undefined;
   return {
-    ...(b.minExclusive != null ? { gt: b.minExclusive } : {}),
-    ...(b.maxInclusive != null ? { lte: b.maxInclusive } : {}),
+    ...(r.min != null ? { gte: r.min * 100 } : {}),
+    ...(r.max != null ? { lte: r.max * 100 } : {}),
   };
+}
+
+/** Fiyat filtresinin kaydırıcısı ve dağılım grafiği için: kategorideki yayındaki ürünlerin fiyatları (TL, artan) */
+export async function getPriceStats(category?: string): Promise<number[]> {
+  "use cache";
+  cacheTag(CATALOG_TAG);
+  cacheLife("hours");
+  const rows = await db.product.findMany({
+    where: { isActive: true, ...(category ? { category: { slug: category } } : {}) },
+    select: { priceKurus: true },
+    orderBy: { priceKurus: "asc" },
+  });
+  return rows.map((r) => r.priceKurus / 100);
 }
 
 export async function getCategories() {
@@ -58,7 +70,7 @@ export async function getShopProducts(filters: Filters): Promise<ProductCardData
     where: {
       isActive: true,
       ...(filters.category ? { category: { slug: filters.category } } : {}),
-      ...(filters.budget ? { priceKurus: priceWhere(filters.budget) } : {}),
+      ...(filters.price ? { priceKurus: priceWhere(filters.price) } : {}),
     },
     orderBy: SORT_ORDER[filters.sort],
     select: { ...cardSelect, description: true, tags: true },
@@ -153,7 +165,7 @@ export async function getSettings(): Promise<SiteSettings> {
   const s = await db.settings.findUnique({ where: { id: 1 } });
   return {
     whatsappNumber: s?.whatsappNumber || process.env.WHATSAPP_NUMBER_FALLBACK || "",
-    whatsappGreeting: s?.whatsappGreeting || "Merhaba! hediyegetir.com üzerinden şu ürünlerle ilgileniyorum:",
+    whatsappGreeting: s?.whatsappGreeting || "Merhaba! hediyegetir üzerinden şu ürünlerle ilgileniyorum:",
     instagramUrl: s?.instagramUrl || "",
   };
 }

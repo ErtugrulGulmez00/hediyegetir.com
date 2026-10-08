@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BUDGETS } from "@/lib/hedis/config";
-import { hrefWith, MAX_SEARCH_LENGTH, SORT_OPTIONS, type Filters, type SortKey } from "@/lib/shop-filters";
+import { PriceFilter } from "./PriceFilter";
+import { hrefWith, MAX_SEARCH_LENGTH, priceLabel, SORT_OPTIONS, type Filters, type SortKey } from "@/lib/shop-filters";
 
 export type ToolbarCategory = { slug: string; name: string; count: number };
 
@@ -15,9 +15,20 @@ const chipTone = (active: boolean) =>
 
 /**
  * Vitrin filtreleri: yatay kaydırılan kategori çipleri + aramalı "Tüm kategoriler" penceresi + kompakt
- * bütçe/sıralama seçicileri. 20+ kategoride de tek satır kalır.
+ * fiyat aralığı/sıralama seçicileri. 20+ kategoride de tek satır kalır.
  */
-export function ShopToolbar({ categories, filters, total }: { categories: ToolbarCategory[]; filters: Filters; total: number }) {
+export function ShopToolbar({
+  categories,
+  filters,
+  prices,
+  total,
+}: {
+  categories: ToolbarCategory[];
+  filters: Filters;
+  /** Kategorideki yayındaki ürünlerin fiyatları (TL, artan): fiyat filtresinin sınırları ve grafiği */
+  prices: number[];
+  total: number;
+}) {
   const [allOpen, setAllOpen] = useState(false);
   const activeName = categories.find((c) => c.slug === filters.category)?.name;
 
@@ -39,14 +50,7 @@ export function ShopToolbar({ categories, filters, total }: { categories: Toolba
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-2 lg:flex-nowrap">
             <SearchBox filters={filters} />
-            <FilterSelect
-              label="Bütçe"
-              value={filters.budget ?? ""}
-              options={[
-                { value: "", label: "Fark etmez", href: hrefWith(filters, { budget: undefined }) },
-                ...BUDGETS.map((b) => ({ value: b.key, label: b.label, href: hrefWith(filters, { budget: b.key }) })),
-              ]}
-            />
+            <PriceFilter filters={filters} prices={prices} />
             <FilterSelect
               label="Sırala"
               value={filters.sort}
@@ -60,6 +64,7 @@ export function ShopToolbar({ categories, filters, total }: { categories: Toolba
       </div>
       <p className="mt-2 text-sm text-murekkep-soluk" aria-live="polite">
         {total} ürün{activeName ? ` · ${activeName}` : ""}
+        {filters.price ? ` · ${priceLabel(filters.price)}` : ""}
         {filters.q ? ` · “${filters.q}” araması` : ""}
       </p>
       <AllCategoriesDialog open={allOpen} onClose={() => setAllOpen(false)} categories={categories} filters={filters} />

@@ -118,7 +118,7 @@ Bu dosya, siteyi geliştirirken yaptığımız konuşmaların ve alınan kararla
   - **Rehber modu** (anahtar yoksa, bakiye bittiyse ya da sınır dolduysa kendiliğinden): Kime → bütçe → ilgi alanları seçeneklerinden sonra kural tabanlı motor öneri yapıyor.
   - Öneriler sepete eklenebiliyor; sepette ürün varken büyük, hardal renkli "Sepete git (N) →" düğmesi çıkıyor.
   - Gösterilen ürünler hakkında soru sorulunca (fiyat, ölçü…) yalnızca yazıyla cevap veriyor; aynı ürün kartları tekrar açılmıyor, mesajın altında küçük bağlantı olarak anılıyor.
-  - Pencere 2 dakikadan uzun kapalı kaldıysa açılınca "kaldığımız yerden devam edelim mi?" diye soruyor; 30 dakikadan uzun kapalı kaldıysa sohbet baştan başlıyor.
+  - Kapandıktan sonra 15 saniye içinde açılırsa sohbet kaldığı yerden devam ediyor (yanlışlıkla dışarı tıklayan geri dönebilsin); 15 saniyeden sonra açılınca baştan başlıyor (`RESET_AFTER_MS`).
   - Sağ alttaki yüzen düğme yalnızca sayfa aşağı kayınca görünüyor ve sepette gizleniyor.
 - **Ürün sayfası:**
   - Galeri admin'de seçilen düzende: **Tek** (kaydırmalı), **İkili** (iki sütun) ya da **Üçlü** (bir büyük + iki küçük). Fotoğraf yetmezse bir alt düzene düşer. Fotoğraf sütunu dar (masaüstünde 26–30rem), sayfa kaydırmadan görünüyor.
@@ -149,7 +149,7 @@ Bu dosya, siteyi geliştirirken yaptığımız konuşmaların ve alınan kararla
   - Yapay zeka asistanı: Fotoğraftan ya da addan öneri getiriyor ve yalnızca boş alanları dolduruyor. Doldurduğu alanlarda "AI" rozeti çıkıyor.
   - Eşleşmeyen kategori önerilirse "Kategoriyi oluştur" teklif ediyor.
   - Kaydedilmemiş değişiklik varken sayfadan çıkmaya çalışınca uyarıyor.
-- **Ürün listesi:** Kart ızgarası (fotoğraf, öne çıkan / etiket onaysız rozetleri, fiyat, kategori · stok). Arama, filtreler (Yayında / Pasif / Etiketi onaysız), hızlı yayın aç/kapa, "AI ile eksikleri doldur".
+- **Ürün listesi:** Kart ızgarası (fotoğraf, öne çıkan / etiket onaysız rozetleri, fiyat, kategori · stok). Fotoğrafın sağ üst köşesinde sil düğmesi (onay penceresiyle; masaüstünde karta gelince görünür). Arama, filtreler (Yayında / Pasif / Etiketi onaysız), hızlı yayın aç/kapa, "AI ile eksikleri doldur".
 - **Kategoriler:** Kart görünümü. Her kartta ürün küçük resimleri, ürün ve yayındaki ürün sayısı, "mağazada gizli" rozeti ve "Sitede gör ↗" bağlantısı var.
 - **Ayarlar:**
   - WhatsApp numarası, mesajın ilk cümlesi, Instagram.
@@ -273,6 +273,10 @@ Bu dosya, siteyi geliştirirken yaptığımız konuşmaların ve alınan kararla
 23. **Onay pencereleri:** Tarayıcının `confirm()` kutuları yerine sitenin tarzında tek pencere (`confirmDialog` + `ConfirmHost`, kök yerleşimde): sepeti boşalt, ürün/kategori sil, kaydedilmemiş değişiklik. Sekme kapatma/yenilemedeki uyarı tarayıcının kendisi, değiştirilemez.
 24. **Genel mağaza dili:** Site artık yalnızca el işi değil, hazır ürün de satıyor. Genel metinlerde (ana sayfa başı, alt bilgi, kategori sayfaları, sipariş adımları, site başlığı, yapay zeka talimatları) el yapımı/örgü vurgusu kaldırıldı. El yapımı vurgusu yalnızca **damgalı** ürünlerde: ürün sayfasında "Senin için elde yapılır" satırı damga varsa çıkıyor. Yeni ürünler damgasız başlıyor (`20261008230000_damga_varsayilan_bos`). Hakkımızda'daki kurucu hikâyesi korundu, "her parça elde örülür" gibi iddialar düzeltildi.
 25. **Sepet:** "Siparişi WhatsApp'tan gönder"e basınca sepet (not ve hediye paketi dahil) boşalıyor; yerine "Siparişin WhatsApp'ta hazır!" notu ve "Sepetini geri getir" bağlantısı çıkıyor.
+26. **Fiyat filtresi:** Vitrindeki sabit "Bütçe" seçimi (3 aralık) yerine sade bir "Fiyat" düğmesi: küçük panelde "En az / En çok" kutuları (ipucu: kategorideki en düşük/yüksek fiyat), Uygula ve Temizle. Grafikli/kaydırıcılı sürüm denendi, kullanıcı abartılı buldu. Adres `?fiyat=500-1200` (TL; tek uç da olur); eski `?butce=` adresleri aralığa çevriliyor. Hediş'in rehber modundaki bütçe seçenekleri aynı kaldı.
+27. **Hediş en fazla 2 soru:** İlk öneriden önce en fazla 2 soru (`MAX_QUESTIONS`). Talimatta yazıyor; ayrıca sunucu sayıyor (`mustRecommend`): sınır dolduysa modele "artık öner" uyarısı gidiyor, yine ürün seçmezse kural tabanlı motor öneriyor (kişi bilinmiyorsa "diğer"). Öneriden sonra serbest sohbet.
+28. **Hediş alt düğmeleri:** "Sepete git (N)" (hardal) ve "Diğer ürünlere göz at" (zeytin) yan yana büyük düğmeler; "Baştan başla" altta küçük.
+29. **Yayın kararı (9 Ekim):** Vercel'de, **alan adı şimdilik alınmıyor**; site `*.vercel.app` adresinde yayınlanacak. Adres yalnızca `NEXT_PUBLIC_SITE_URL`'den geliyor; kodda sabit "hediyegetir.com" metinleri marka adına ("hediyegetir") çevrildi, WhatsApp karşılama cümlesi de (`20261009090000_karsilama_alan_adsiz`). Fotoğrafları Blob'a taşımak için `npm run foto-blob` yazıldı (14 fotoğraf, ~1,5 MB).
 
 ---
 

@@ -50,7 +50,7 @@ export async function SiteFooter() {
       </div>
       {/* Mobilde alttaki boşluk: sağ alttaki yüzen Hediş düğmesi bu satırın üstüne binmesin */}
       <p className="border-t border-murekkep/20 px-4 pt-4 pb-20 text-center text-sm text-murekkep sm:pb-4">
-        © <CopyrightYear /> hediyegetir.com
+        © <CopyrightYear /> hediyegetir
       </p>
     </footer>
   );

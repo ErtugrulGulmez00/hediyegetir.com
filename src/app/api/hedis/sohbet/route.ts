@@ -8,6 +8,7 @@ import {
   catalogText,
   MAX_MESSAGE_CHARS,
   MAX_TURNS,
+  mustRecommend,
   parseChatReply,
   profileToAnswers,
   sanitizeTurns,
@@ -109,18 +110,23 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const catalog = catalogText(products.map((p) => ({ ...p, category: p.category?.name ?? null })));
+    // Soru sınırı dolduysa bu turda soru yok, öneri var
+    const recommendNow = mustRecommend(turns);
     const messages: ChatMessage[] = [
       { role: "system", content: systemPrompt(catalog, products.length) },
       ...turns.map((t) => ({ role: t.role, content: t.text })),
+      ...(recommendNow
+        ? [{ role: "system" as const, content: "Soru hakkın doldu. Bu mesajda soru sorma; bildiklerinle katalogdan 1-5 ürün öner (asama: oneri)." }]
+        : []),
     ];
     const { text } = await askModel({ model: await getAiModel(), messages });
     const reply = parseChatReply(text, new Set(byId.keys()));
     if (!reply) return json({ error: "Hediş bir an dalgınlaştı; tekrar yazar mısın?" }, 502);
 
     let picks = reply.picks.map((p) => ({ id: p.id, reasons: p.reason ? [p.reason] : [] }));
-    // AI öneri aşamasına geçti ama geçerli ürün seçemediyse kural tabanlı motorla doldur
-    if (reply.stage === "recommend" && picks.length === 0) {
-      const answers = profileToAnswers(reply.profile);
+    // AI öneri aşamasına geçti (ya da soru sınırı doldu) ama geçerli ürün seçemediyse kural tabanlı motorla doldur
+    if ((reply.stage === "recommend" || recommendNow) && picks.length === 0) {
+      const answers = profileToAnswers(reply.profile, { anyRecipient: recommendNow });
       if (answers) picks = recommend(products, answers).items.map((i) => ({ id: i.id, reasons: i.reasons }));
     }
 

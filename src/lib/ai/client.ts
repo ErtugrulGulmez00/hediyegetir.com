@@ -1,6 +1,8 @@
 // Yapay zeka çağrıları için ortak istemci (OpenAI ya da OpenRouter, sohbet tamamlama API'si).
 // Ürün analizi ve Hediş sohbeti bunu kullanır.
 
+import { SITE_URL } from "../site";
+
 // Hız/maliyet/Türkçe kalite karşılaştırmasında en iyisi (≈2,7 sn, ≈0,00015 $ / fotoğraf)
 export const DEFAULT_AI_MODEL = "gpt-6-luna";
 
@@ -81,7 +83,7 @@ export async function askModel(opts: {
     headers = {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://hediyegetir.com",
+      "HTTP-Referer": SITE_URL,
       "X-Title": "hediyegetir",
     };
     const models = opts.model.endsWith(":free") ? [opts.model, ...FREE_FALLBACKS.filter((m) => m !== opts.model)] : [opts.model];

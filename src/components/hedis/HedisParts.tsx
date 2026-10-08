@@ -240,35 +240,46 @@ export function MentionedProducts({ products }: { products: HedisProduct[] }) {
   );
 }
 
-/** Pencerenin altındaki bağlantılar. Sepette ürün varsa büyük, belirgin bir "Sepete git" düğmesi çıkar. */
+/** Pencerenin altındaki düğmeler: büyük "Sepete git" (hardal, sepette ürün varken) ve "Diğer ürünlere göz at" (zeytin) */
 export function HedisActions({ onRestart, onBrowseShop }: { onRestart?: () => void; onBrowseShop: () => void }) {
   const count = useCartCount();
-  // Saydam pencerede arkada ne olursa olsun okunsun: koyu kapsül üstünde açık renk
-  const link = "underline-offset-2 hover:text-kagit hover:underline";
+  const big =
+    "inline-flex items-center justify-center gap-3 rounded-full border-2 border-murekkep px-6 py-3 text-lg font-bold shadow-baski transition-transform hover:-translate-y-0.5";
   return (
     <div className="mt-3 flex flex-col items-center gap-2.5">
-      {count > 0 && (
-        <Link
-          href="/sepet"
-          data-yuzey
-          className="inline-flex items-center gap-3 rounded-full border-2 border-murekkep bg-hardal px-6 py-3 text-lg font-bold text-murekkep shadow-baski transition-transform hover:-translate-y-0.5"
-        >
-          <CartIcon />
-          Sepete git ({count})
-          <span aria-hidden>→</span>
-        </Link>
-      )}
-      <div className="inline-flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl bg-murekkep px-5 py-2 text-sm">
-        {onRestart && (
-          <button type="button" onClick={onRestart} className={`text-krem ${link}`}>
-            ↺ Baştan başla
-          </button>
+      <div className="flex w-full flex-col items-stretch justify-center gap-2.5 sm:w-auto sm:flex-row sm:items-center">
+        {count > 0 && (
+          <Link href="/sepet" data-yuzey className={`${big} bg-hardal text-murekkep`}>
+            <CartIcon />
+            Sepete git ({count})
+            <span aria-hidden>→</span>
+          </Link>
         )}
-        <button type="button" onClick={onBrowseShop} className={`font-semibold text-krem ${link}`}>
-          Diğer ürünlere göz at →
+        <button type="button" onClick={onBrowseShop} data-yuzey className={`${big} bg-zeytin text-kagit`}>
+          <ShopIcon />
+          Diğer ürünlere göz at
+          <span aria-hidden>→</span>
         </button>
       </div>
+      {onRestart && (
+        // Saydam pencerede arkada ne olursa olsun okunsun: koyu kapsül üstünde açık renk
+        <button
+          type="button"
+          onClick={onRestart}
+          className="rounded-full bg-murekkep px-4 py-1.5 text-sm text-krem underline-offset-2 hover:text-kagit hover:underline"
+        >
+          ↺ Baştan başla
+        </button>
+      )}
     </div>
+  );
+}
+
+function ShopIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 9.5 5.5 4h13L20 9.5M4 9.5h16M4 9.5c0 1.4 1.1 2.5 2.7 2.5s2.6-1.1 2.6-2.5c0 1.4 1.2 2.5 2.7 2.5s2.7-1.1 2.7-2.5c0 1.4 1 2.5 2.6 2.5S20 10.9 20 9.5M5.5 12v8h13v-8M10 20v-4.5h4V20" />
+    </svg>
   );
 }
 

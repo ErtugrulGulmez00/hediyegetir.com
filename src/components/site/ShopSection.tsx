@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { NotePaper } from "@/components/ui/NotePaper";
-import { getCategories, getShopProducts } from "@/lib/catalog";
+import { getCategories, getPriceStats, getShopProducts } from "@/lib/catalog";
 import { hrefWith, readFilters } from "@/lib/shop-filters";
 import { ProductCard } from "./ProductCard";
 import { ShopToolbar } from "./ShopToolbar";
@@ -10,14 +10,15 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 /** Filtre çubuğu + ürün ızgarası. Ana sayfa ve kategori sayfaları (category ile) kullanır. */
 export async function ShopContent({ searchParams, category }: { searchParams: SearchParams; category?: string }) {
   const filters = readFilters(await searchParams, category);
-  const [categories, products] = await Promise.all([getCategories(), getShopProducts(filters)]);
-  const narrowed = !!(filters.budget || filters.q);
+  const [categories, products, prices] = await Promise.all([getCategories(), getShopProducts(filters), getPriceStats(filters.category)]);
+  const narrowed = !!(filters.price || filters.q);
 
   return (
     <>
       <ShopToolbar
         categories={categories.map((c) => ({ slug: c.slug, name: c.name, count: c._count.products }))}
         filters={filters}
+        prices={prices}
         total={products.length}
       />
 
@@ -35,9 +36,9 @@ export async function ShopContent({ searchParams, category }: { searchParams: Se
             {filters.q ? <>&ldquo;{filters.q}&rdquo; için rafta bir şey bulamadım.</> : "Hmm, bu rafta şu an bir şey yok."}
           </p>
           <p className="mt-2">
-            {narrowed ? "Aramayı ya da bütçeyi değiştirip yeniden bakabilirsin. " : "Yakında yeni ürünler geliyor. "}
+            {narrowed ? "Aramayı ya da fiyat aralığını değiştirip yeniden bakabilirsin. " : "Yakında yeni ürünler geliyor. "}
             {narrowed && (
-              <Link href={hrefWith(filters, { budget: undefined, q: undefined })} className="link-el font-semibold">
+              <Link href={hrefWith(filters, { price: undefined, q: undefined })} className="link-el font-semibold">
                 {filters.q ? "Aramayı temizle" : "Filtreleri temizle"}
               </Link>
             )}

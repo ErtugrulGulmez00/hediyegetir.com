@@ -17,7 +17,7 @@ export default async function SettingsPage() {
         <SettingsForm
           initial={{
             whatsappNumber: s?.whatsappNumber ?? "",
-            whatsappGreeting: s?.whatsappGreeting ?? "Merhaba! hediyegetir.com üzerinden şu ürünlerle ilgileniyorum:",
+            whatsappGreeting: s?.whatsappGreeting ?? "Merhaba! hediyegetir üzerinden şu ürünlerle ilgileniyorum:",
             instagramUrl: s?.instagramUrl ?? "",
             aiModel: s?.aiModel ?? DEFAULT_AI_MODEL,
           }}

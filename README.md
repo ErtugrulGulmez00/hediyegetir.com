@@ -34,6 +34,7 @@ Hediş, yapay zeka anahtarı (`OPENAI_API_KEY` / `OPENROUTER_API_KEY`) yokken ya
 | `npm run test:e2e` | Uçtan uca testler (Playwright; admin testleri için `E2E_ADMIN_PASSWORD` gerekir). Hediş sohbet testleri yapay zekayı taklit eder ama dev sunucusunda bir `OPENAI_API_KEY` tanımlı olmalı (sahte bir değer yeter); yoksa Hediş rehber modunda açılır |
 | `npm run typecheck` | TypeScript kontrolü |
 | `npm run db:studio` | Prisma Studio ile veritabanına göz at |
+| `npm run foto-blob` | `public/uploads`'taki ürün fotoğraflarını Vercel Blob'a yükler, adresleri günceller (yayına ilk geçişte bir kez) |
 | `npm run urun-aktar` | Yerel ürünleri/kategorileri/ayarları başka bir veritabanına taşır, fotoğrafları Blob'a yükler (yayına ilk geçişte bir kez) |
 | `npm run hash-password -- "şifre"` | Admin şifresi için bcrypt hash üretir |
 
@@ -51,7 +52,7 @@ Hediş, yapay zeka anahtarı (`OPENAI_API_KEY` / `OPENROUTER_API_KEY`) yokken ya
    | --- | --- |
    | `DATABASE_URL` | Supabase *Transaction pooler* adresi (6543) |
    | `DIRECT_URL` | Supabase *Session pooler* adresi (5432) |
-   | `NEXT_PUBLIC_SITE_URL` | `https://hediyegetir.com` |
+   | `NEXT_PUBLIC_SITE_URL` | Vercel'in verdiği adres, ör. `https://hediyegetir.vercel.app` (alan adı alınınca `https://hediyegetir.com`) |
    | `WHATSAPP_NUMBER_FALLBACK` | `905050434796` |
    | `ADMIN_USERNAME` | admin kullanıcı adı |
    | `ADMIN_PASSWORD_HASH` | `npm run hash-password -- "şifre"` çıktısındaki ilk satır (Vercel'de `$` kaçışı **gerekmez**) |
@@ -62,16 +63,13 @@ Hediş, yapay zeka anahtarı (`OPENAI_API_KEY` / `OPENROUTER_API_KEY`) yokken ya
    | `HEDIS_DAILY_LIMIT` | (isteğe bağlı) Hediş sohbeti için günlük toplam istek sınırı, varsayılan 1500 (bakiyeyi korur) |
 
 5. **Deploy** et. İlk deploy migration'ları uygular.
-6. **Ürünleri taşı (bir kez):** Yerel veritabanındaki ürünler, kategoriler ve ayarlar yayına bu bilgisayardan taşınır; fotoğraflar Blob'a yüklenir.
+6. **Fotoğrafları Blob'a taşı (bir kez):** Veritabanı zaten Supabase'de; yalnızca `public/uploads`'taki fotoğraflar (git'e girmez, yayında yoktur) Blob'a yüklenir ve adresleri güncellenir. Vercel → *Storage → Blob* sayfasındaki `BLOB_READ_WRITE_TOKEN`'ı yerel `.env`'e de yaz, sonra:
    ```powershell
-   $env:KAYNAK_DATABASE_URL="<yerel veritabanı: .env'deki DATABASE_URL>"
-   $env:HEDEF_DATABASE_URL="<Supabase Session pooler adresi>"
-   $env:BLOB_READ_WRITE_TOKEN="<Vercel Blob anahtarı>"
-   npm run urun-aktar -- --dene   # önce neyin taşınacağını gör
-   npm run urun-aktar
+   npm run foto-blob -- --dene   # önce neyin yükleneceğini gör
+   npm run foto-blob
    ```
-   Sonra Vercel'de yeniden deploy et. `/admin` → *Ürünler* → "Etiketi onaysız" filtresiyle Hediş etiketlerini kontrol et.
-7. **Alan adı:** Vercel → *Domains* → `hediyegetir.com` ve `www.hediyegetir.com` ekle; alan adı sağlayıcısında Vercel'in gösterdiği A / CNAME kayıtlarını gir.
+   Tekrar çalıştırılabilir; yalnızca adresi hâlâ `/uploads/` olan fotoğrafları işler. (Ayrı bir yerel veritabanından taşıma gerekirse: `npm run urun-aktar`.)
+7. **Alan adı (şimdilik yok, sonra):** Vercel → *Domains* → `hediyegetir.com` ve `www.hediyegetir.com` ekle; alan adı sağlayıcısında Vercel'in gösterdiği A / CNAME kayıtlarını gir.
 8. **KVKK:** `src/app/(site)/kvkk/page.tsx` içindeki `[İŞLETME ADI]`, `[ADRES]`, `[E-POSTA]`, `[TARİH]` yer tutucularını doldur.
 
 ### Yayın sonrası kontrol listesi

@@ -1,6 +1,7 @@
 // Vitrin filtreleri: adres çubuğu <-> filtre durumu. Sunucu sayfası ve istemci araç çubuğu ortak kullanır.
-// Kategori adresin kendisidir (/kategori/canta); bütçe, sıralama ve arama sorgu parametresidir.
-import { budgetByKey, type BudgetKey } from "./hedis/config";
+// Kategori adresin kendisidir (/kategori/canta); fiyat aralığı, sıralama ve arama sorgu parametresidir.
+import { budgetByKey } from "./hedis/config";
+import { formatPrice } from "./money";
 
 export const SORT_OPTIONS = {
   onerilen: "Önerilen",
@@ -11,7 +12,33 @@ export const SORT_OPTIONS = {
 export type SortKey = keyof typeof SORT_OPTIONS;
 export const isSortKey = (s: unknown): s is SortKey => typeof s === "string" && s in SORT_OPTIONS;
 
-export type Filters = { category?: string; budget?: BudgetKey; sort: SortKey; q?: string };
+/** Fiyat aralığı, TL (tam sayı). İki uç da isteğe bağlı. */
+export type PriceRange = { min?: number; max?: number };
+export type Filters = { category?: string; price?: PriceRange; sort: SortKey; q?: string };
+
+const MAX_PRICE_TL = 1_000_000;
+
+/** "500-1200", "500-" ya da "-1200" (TL). Geçersizse undefined; ters yazılmışsa uçları çevirir. */
+export function parsePriceParam(raw: string | undefined): PriceRange | undefined {
+  const m = raw?.trim().match(/^(\d{0,7})-(\d{0,7})$/);
+  if (!m) return undefined;
+  const num = (s: string) => (s ? Math.min(MAX_PRICE_TL, Number(s)) : undefined);
+  let min = num(m[1]);
+  let max = num(m[2]);
+  if (min === 0) min = undefined;
+  if (min != null && max != null && min > max) [min, max] = [max, min];
+  return min == null && max == null ? undefined : { min, max };
+}
+
+const priceParam = (r: PriceRange) => `${r.min ?? ""}-${r.max ?? ""}`;
+
+/** Düğmede ve sonuç satırında: "₺500 – ₺1.200", "₺500 ve üzeri", "₺1.200'e kadar" yerine "en çok ₺1.200" */
+export function priceLabel(r: PriceRange | undefined): string | null {
+  if (!r || (r.min == null && r.max == null)) return null;
+  const tl = (n: number) => formatPrice(n * 100);
+  if (r.min != null && r.max != null) return r.min === r.max ? tl(r.min) : `${tl(r.min)} – ${tl(r.max)}`;
+  return r.min != null ? `${tl(r.min)} ve üzeri` : `en çok ${tl(r.max!)}`;
+}
 
 export const MAX_SEARCH_LENGTH = 60;
 
@@ -20,12 +47,21 @@ type SearchParams = Record<string, string | string[] | undefined>;
 /** `category`: kategori sayfasında adresten gelen kategori (ana sayfada yok) */
 export function readFilters(sp: SearchParams, category?: string): Filters {
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-  const budget = one(sp.butce);
+  // Eski sabit bütçe adresleri (?butce=500-1000) aralığa çevrilir
+  const legacy = budgetByKey(one(sp.butce) ?? "");
+  const price =
+    parsePriceParam(one(sp.fiyat)) ??
+    (legacy
+      ? {
+          min: legacy.minExclusive != null ? legacy.minExclusive / 100 : undefined,
+          max: legacy.maxInclusive != null ? legacy.maxInclusive / 100 : undefined,
+        }
+      : undefined);
   const sort = one(sp.sirala);
   const q = one(sp.ara)?.replace(/\s+/g, " ").trim().slice(0, MAX_SEARCH_LENGTH);
   return {
     category: category || undefined,
-    budget: budget && budgetByKey(budget) ? (budget as BudgetKey) : undefined,
+    price,
     sort: isSortKey(sort) ? sort : "onerilen",
     q: q || undefined,
   };
@@ -35,7 +71,7 @@ export function readFilters(sp: SearchParams, category?: string): Filters {
 export function hrefWith(f: Filters, patch: Partial<Filters>): string {
   const next = { ...f, ...patch };
   const q = new URLSearchParams();
-  if (next.budget) q.set("butce", next.budget);
+  if (next.price && (next.price.min != null || next.price.max != null)) q.set("fiyat", priceParam(next.price));
   if (next.sort !== "onerilen") q.set("sirala", next.sort);
   if (next.q) q.set("ara", next.q);
   const s = q.toString();

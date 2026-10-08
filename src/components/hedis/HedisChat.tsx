@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { HedisChatResponse, HedisProduct } from "@/app/api/hedis/sohbet/route";
-import type { ChatProfile, ChatTurn } from "@/lib/hedis/ai-chat";
+import { PICKS_MARKER, type ChatProfile, type ChatTurn } from "@/lib/hedis/ai-chat";
 import { occasionByKey, recipientByKey } from "@/lib/hedis/config";
 import { formatPrice } from "@/lib/money";
 import type { MascotMood } from "./Mascot";
@@ -30,7 +30,7 @@ const THINKING = ["Seni dinliyorum…", "Katalogdaki ürünlere bakıyorum…", 
 function toTurns(entries: Entry[]): ChatTurn[] {
   return entries.map((e) =>
     e.role === "assistant" && e.products?.length
-      ? { role: "assistant", text: `${e.text} [Önerdiğim ürünler: ${e.products.map((p) => `${p.name} (${p.id})`).join(", ")}]` }
+      ? { role: "assistant", text: `${e.text} ${PICKS_MARKER} ${e.products.map((p) => `${p.name} (${p.id})`).join(", ")}]` }
       : { role: e.role, text: e.text },
   );
 }
@@ -38,15 +38,10 @@ function toTurns(entries: Entry[]): ChatTurn[] {
 export function HedisChat({
   onBrowseShop,
   onFallback,
-  askResume = false,
-  onResumeAnswered,
 }: {
   onBrowseShop: () => void;
   /** Yapay zekaya ulaşılamıyor: seçenekli rehber moda geç (bilinen kişiyle) */
   onFallback: (recipient: string | null) => void;
-  /** Pencere bir süre kapalı kaldıysa: "kaldığımız yerden devam edelim mi?" sorulur */
-  askResume?: boolean;
-  onResumeAnswered?: () => void;
 }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState("");
@@ -70,17 +65,15 @@ export function HedisChat({
     return () => clearInterval(id);
   }, [loading]);
 
-  // Yeni mesajda (ve devam sorusu çıkınca) görünür alana kaydır
-  const resumeVisible = askResume && entries.length > 0 && !loading;
+  // Yeni mesajda görünür alana kaydır
   useEffect(() => {
     if (entries.length === 0 && !loading) return;
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [entries.length, loading, resumeVisible]);
+  }, [entries.length, loading]);
 
   async function send(text: string, history = entries) {
     const clean = text.trim();
     if (!clean || loading) return;
-    if (askResume) onResumeAnswered?.();
     const next: Entry[] = [...history, { role: "user", text: clean }];
     setEntries(next);
     setDraft("");
@@ -150,7 +143,7 @@ export function HedisChat({
   const last = entries[entries.length - 1];
   const lastAssistant = [...entries].reverse().find((e) => e.role === "assistant");
   const started = entries.length > 0;
-  const quickReplies = !started ? null : !loading && !resumeVisible && last?.role === "assistant" ? (last.quickReplies ?? []) : [];
+  const quickReplies = !started ? null : !loading && last?.role === "assistant" ? (last.quickReplies ?? []) : [];
   const mood: MascotMood = loading ? "thinking" : lastAssistant?.products?.length ? "happy" : "talking";
 
   const greeting = returning
@@ -208,29 +201,6 @@ export function HedisChat({
             </li>
           );
         })}
-
-        {resumeVisible && (
-          <li>
-            <HedisNote>
-              <p>Tekrar hoş geldin! Kaldığımız yerden devam edelim mi, yoksa yeni bir hediye mi arayalım?</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button type="button" onClick={onResumeAnswered} className="btn btn-ana min-h-10 px-4 py-1.5 text-sm">
-                  Kaldığım yerden devam et
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    restart();
-                    onResumeAnswered?.();
-                  }}
-                  className="btn btn-ikincil min-h-10 px-4 py-1.5 text-sm"
-                >
-                  Yeni sohbet başlat
-                </button>
-              </div>
-            </HedisNote>
-          </li>
-        )}
 
         {loading && (
           <li>
