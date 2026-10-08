@@ -103,3 +103,20 @@ describe("recommend", () => {
     expect(recommend([a, b], anne).items[0].id).toBe(b.id);
   });
 });
+
+describe("recommend: isteğe bağlı bütçe ve özel gün", () => {
+  it("bütçe yoksa fiyatı puanlamaz, kişi eşleşmesi yeterli", () => {
+    const pahali = product({ priceKurus: 900_000 });
+    const r = recommend([pahali], { recipient: "anne", gender: null, hobbies: [] });
+    expect(r.strongCount).toBe(1);
+    expect(r.items[0].reasons).toEqual(["Annene uygun"]);
+  });
+
+  it("özel gün eşleşmesi öne çıkarır ve nedenini yazar", () => {
+    const a = product();
+    const b = product({ occasions: ["emeklilik"] });
+    const r = recommend([a, b], { ...anne, occasion: "emeklilik" });
+    expect(r.items[0].id).toBe(b.id);
+    expect(r.items[0].reasons).toContain("Emeklilik için uygun");
+  });
+});

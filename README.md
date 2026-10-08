@@ -1,6 +1,6 @@
 # hediyegetir.com
 
-El yapımı hediyelik ürünler için mağaza sitesi. Ana sayfa ürün vitrinidir; ziyaretçiye açılan **Hediş** penceresi birkaç soruyla 5 hediye önerir. Sepet WhatsApp üzerinden mağazaya iletilir. Online ödeme yoktur. Ürünler admin panelinden yönetilir.
+El yapımı hediyelik ürünler için mağaza sitesi. Ana sayfa ürün vitrinidir; ziyaretçiye açılan **Hediş** penceresi yapay zekayla sohbet ederek (serbest metin + hızlı seçenekler, kişiye özel sorular) katalogdan hediye seçer ve nedenini söyler. Sepet WhatsApp üzerinden mağazaya iletilir. Online ödeme yoktur. Ürünler admin panelinden yönetilir.
 
 Mimari ve aşama planı: [ProjeMimarisi.md](ProjeMimarisi.md)
 
@@ -53,6 +53,7 @@ Admin paneli: http://localhost:3000/admin
    | `VISITOR_SALT` | rastgele dize |
    | `OPENAI_API_KEY` | (isteğe bağlı) admin'de fotoğraftan ad/kategori/Hediş etiketi önerisi; varsayılan model `gpt-6-luna`, *Ayarlar*'dan değiştirilebilir |
    | `OPENROUTER_API_KEY` | (isteğe bağlı) Ayarlar'da adında `/` olan bir model seçilirse kullanılır |
+   | `HEDIS_DAILY_LIMIT` | (isteğe bağlı) Hediş sohbeti için günlük toplam istek sınırı, varsayılan 1500 (bakiyeyi korur) |
 
 5. **Deploy** et. İlk deploy migration'ları uygular.
 6. **Ürünleri taşı (bir kez):** Yerel veritabanındaki ürünler, kategoriler ve ayarlar yayına bu bilgisayardan taşınır; fotoğraflar Blob'a yüklenir.

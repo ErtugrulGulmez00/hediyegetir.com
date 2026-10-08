@@ -3,6 +3,7 @@ import {
   BUDGET_TOLERANCE,
   budgetByKey,
   hobbyByKey,
+  occasionByKey,
   MAX_PER_CATEGORY,
   recipientByKey,
   RESULT_COUNT,
@@ -15,9 +16,12 @@ export type HedisAnswers = {
   recipient: string;
   /** Kişinin cinsiyeti belli değilse sorulur; null = fark etmez */
   gender: Exclude<GenderKey, "UNISEX"> | null;
-  budget: BudgetKey;
+  /** Belirtilmediyse bütçe puanlanmaz */
+  budget?: BudgetKey;
   /** Boş = emin değilim */
   hobbies: string[];
+  /** Özel gün (OCCASIONS anahtarı) */
+  occasion?: string;
 };
 
 export type Candidate = {
@@ -29,6 +33,7 @@ export type Candidate = {
   isFeatured: boolean;
   categoryId: string | null;
   createdAt: Date;
+  occasions?: string[];
 };
 
 export type BudgetFit = "in" | "above" | "below" | "out";
@@ -85,7 +90,7 @@ function scoreOne(p: Candidate, a: HedisAnswers) {
     }
   }
 
-  const fit = budgetFit(p.priceKurus, a.budget);
+  const fit: BudgetFit | "none" = a.budget ? budgetFit(p.priceKurus, a.budget) : "none";
   if (fit === "in") {
     score += WEIGHTS.inBudget;
     reasons.push("Bütçene uygun");
@@ -103,6 +108,12 @@ function scoreOne(p: Candidate, a: HedisAnswers) {
       const label = hobbyByKey(h)?.label;
       if (label) reasons.push(`${label} sevenlere`);
     }
+  }
+
+  if (a.occasion && p.occasions?.includes(a.occasion)) {
+    score += WEIGHTS.occasion;
+    const label = occasionByKey(a.occasion)?.label;
+    if (label) reasons.push(`${label} için uygun`);
   }
 
   if (p.isFeatured) score += WEIGHTS.featured;

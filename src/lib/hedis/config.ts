@@ -112,6 +112,8 @@ export const WEIGHTS = {
   /** Bütçe sınırının %20 yakınında */
   nearBudget: 10,
   perHobby: 20,
+  /** Özel gün eşleşmesi */
+  occasion: 20,
   featured: 5,
 } as const;
 

@@ -54,7 +54,7 @@ export function HedisDialog() {
       onClick={(e) => {
         if (e.target === e.currentTarget) closeHedis();
       }}
-      className="hedis-pencere m-0 h-dvh max-h-none w-full max-w-none border-0 bg-transparent p-0 backdrop:bg-murekkep/55 sm:m-auto sm:h-fit sm:max-h-[92dvh] sm:w-[calc(100%-3rem)] sm:max-w-5xl"
+      className="hedis-pencere m-0 h-dvh max-h-none w-full max-w-none border-0 bg-transparent p-0 backdrop:bg-murekkep/55 sm:m-auto sm:h-fit sm:max-h-[92dvh] sm:w-[calc(100%-3rem)] sm:max-w-4xl"
     >
       <div className="relative min-h-full bg-krem px-4 pt-4 pb-10 sm:rounded-sm sm:border-2 sm:border-murekkep sm:px-8 sm:pt-6 sm:shadow-baski">
         <div className="sticky top-0 z-20 -mx-4 mb-4 flex items-center justify-between gap-3 border-b-2 border-dashed border-kraft-koyu bg-krem px-4 py-2 sm:-mx-8 sm:px-8">

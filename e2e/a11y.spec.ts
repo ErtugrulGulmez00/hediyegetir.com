@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { hedisGorulmus } from "./yardim";
+import { hedisGorulmus, ornekUrun } from "./yardim";
 
 // Kontrast animasyonun ortasında (yarı saydamken) ölçülmesin; "hareketi azalt" modu da böylece test edilir
 test.use({ reducedMotion: "reduce" });
@@ -22,29 +22,45 @@ for (const path of PAGES) {
   });
 }
 
-test("Hediş penceresi ve sonuç ekranı erişilebilir", async ({ page }) => {
+test("Hediş penceresi ve öneri ekranı erişilebilir", async ({ page }) => {
+  const urun = await ornekUrun("handmade-kol-cantasi");
+  await page.route("**/api/hedis/sohbet", (route) =>
+    route.fulfill({
+      json: {
+        message: "Annen için bunları seçtim.",
+        quickReplies: ["Başka seçenek göster", "Daha uygun fiyatlı"],
+        stage: "recommend",
+        profile: { recipient: "anne", recipientText: "annem", gender: null, budgetMaxKurus: 100_000, occasion: "dogum-gunu", hobbies: [] },
+        products: [{ ...urun, reasons: ["El örgüsü ve günlük kullanışlı."] }],
+        catalogSize: 8,
+      },
+    }),
+  );
   await page.goto("/");
   const dialog = page.getByRole("dialog", { name: "Hediş'e sor" });
   await expect(dialog).toBeVisible();
   expect(await violations(page)).toEqual([]);
 
   await dialog.getByRole("button", { name: "Anne", exact: true }).click();
-  await dialog.getByRole("button", { name: "500 – 1.000 ₺" }).click();
-  await dialog.getByRole("button", { name: "Emin değilim, sen seç" }).click();
-  await dialog.getByRole("heading", { name: /özel/ }).waitFor({ timeout: 10_000 });
+  await expect(dialog.getByText("El örgüsü ve günlük kullanışlı.")).toBeVisible();
   expect(await violations(page)).toEqual([]);
 });
 
-test("Hediş klavyeyle kullanılabilir; odak yeni soruya taşınır", async ({ page }) => {
+test("Hediş klavyeyle kullanılabilir; cevaptan sonra odak yazı alanına döner", async ({ page }) => {
+  await page.route("**/api/hedis/sohbet", (route) =>
+    route.fulfill({
+      json: { message: "Hangi özel gün için?", quickReplies: ["Doğum günü"], stage: "question", profile: {}, products: [], catalogSize: 8 },
+    }),
+  );
   await page.goto("/");
   const dialog = page.getByRole("dialog", { name: "Hediş'e sor" });
-  await dialog.getByRole("button", { name: "Anne", exact: true }).focus();
+  const input = dialog.getByLabel("Hediş'e yaz");
+  await input.focus();
+  await page.keyboard.type("Eşim için hediye arıyorum");
   await page.keyboard.press("Enter");
-  await expect(dialog.getByRole("heading", { name: /Annene ne kadar/ })).toBeFocused();
-  await page.keyboard.press("Tab");
-  await page.keyboard.press("Enter");
-  await expect(dialog.getByRole("heading", { name: /Annen nelerden/ })).toBeFocused();
-  // Esc kapatır, odak sayfaya döner
+  await expect(dialog.getByText("Hangi özel gün için?")).toBeVisible();
+  await expect(input).toBeFocused();
+  // Esc kapatır
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
 });

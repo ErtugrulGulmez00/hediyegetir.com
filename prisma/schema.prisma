@@ -106,3 +106,14 @@ model LoginAttempt {
 
   @@index([key, createdAt])
 }
+
+// Herkese açık yapay zeka uç noktaları için istek sınırı (IP hash'i, IP'nin kendisi tutulmaz)
+model AiRequest {
+  id        String   @id @default(cuid())
+  key       String
+  kind      String // ör. "hedis"
+  createdAt DateTime @default(now())
+
+  @@index([kind, key, createdAt])
+  @@index([kind, createdAt])
+}

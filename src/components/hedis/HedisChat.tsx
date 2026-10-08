@@ -1,413 +1,364 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { HedisProduct, HedisResponse } from "@/app/api/hedis/oneri/route";
+import { useEffect, useRef, useState } from "react";
+import type { HedisChatResponse, HedisProduct } from "@/app/api/hedis/sohbet/route";
+import { AiSparkle } from "@/components/ai/AiBits";
 import { ProductCard } from "@/components/site/ProductCard";
-import { Scribble } from "@/components/ui/Scribble";
 import { Tape } from "@/components/ui/Tape";
-import { TagChip } from "@/components/ui/TagChip";
-import { BUDGETS, HOBBIES, MAX_HOBBIES, RECIPIENTS, budgetByKey, hobbyByKey, recipientByKey, type BudgetKey, type Recipient } from "@/lib/hedis/config";
-import { MSG } from "@/lib/hedis/messages";
+import type { ChatProfile, ChatTurn } from "@/lib/hedis/ai-chat";
+import { occasionByKey, recipientByKey } from "@/lib/hedis/config";
+import { formatPrice } from "@/lib/money";
 import { useCart } from "@/store/cart";
 import { Mascot, type MascotMood } from "./Mascot";
 
-type Step = "recipient" | "gender" | "budget" | "hobbies" | "thinking" | "results" | "error";
-type GenderAnswer = "KADIN" | "ERKEK" | null;
-type Answers = { recipient?: string; gender?: GenderAnswer; budget?: BudgetKey; hobbies?: string[] };
+type Entry = ChatTurn & { products?: HedisProduct[]; quickReplies?: string[]; profile?: ChatProfile; catalogSize?: number };
 
-const MIN_THINKING_MS = 1600;
+/** İlk ekrandaki hızlı seçenekler: tıklanınca kullanıcının ağzından doğal bir cümle gönderilir */
+const STARTERS: { label: string; text: string | null }[] = [
+  { label: "Anne", text: "Annem için hediye arıyorum." },
+  { label: "Baba", text: "Babam için hediye arıyorum." },
+  { label: "Sevgili", text: "Sevgilim için hediye arıyorum." },
+  { label: "Eş", text: "Eşim için hediye arıyorum." },
+  { label: "Arkadaş", text: "Arkadaşım için hediye arıyorum." },
+  { label: "Çocuk", text: "Bir çocuk için hediye arıyorum." },
+  { label: "Öğretmen", text: "Öğretmenim için hediye arıyorum." },
+  { label: "İş arkadaşı", text: "İş arkadaşım için hediye arıyorum." },
+  { label: "Diğer", text: null },
+];
+
+const THINKING = ["Seni dinliyorum…", "Katalogdaki ürünlere bakıyorum…", "Sana uygun olanları seçiyorum…"];
 const LAST_KEY = "hg_hedis_son";
 
 function readLast(): string | null {
   try {
-    return JSON.parse(localStorage.getItem(LAST_KEY) ?? "null")?.recipient ?? null;
+    const v = JSON.parse(localStorage.getItem(LAST_KEY) ?? "null");
+    return typeof v?.text === "string" ? v.text : null;
   } catch {
     return null;
   }
 }
-function writeLast(recipient: string) {
+function writeLast(text: string) {
   try {
-    localStorage.setItem(LAST_KEY, JSON.stringify({ recipient, at: Date.now() }));
+    localStorage.setItem(LAST_KEY, JSON.stringify({ text, at: Date.now() }));
   } catch {
     // depolama kapalıysa sorun değil
   }
 }
 
-const genderLabel = (g: GenderAnswer) => (g === "KADIN" ? "Kadın" : g === "ERKEK" ? "Erkek" : "Fark etmez");
+/** Modele giden geçmiş: önerilen ürünler asistan mesajına eklenir ki aynılarını tekrar önermesin */
+function toTurns(entries: Entry[]): ChatTurn[] {
+  return entries.map((e) =>
+    e.role === "assistant" && e.products?.length
+      ? { role: "assistant", text: `${e.text} [Önerdiğim ürünler: ${e.products.map((p) => `${p.name} (${p.id})`).join(", ")}]` }
+      : { role: e.role, text: e.text },
+  );
+}
 
 export function HedisChat({ onBrowseShop }: { onBrowseShop: () => void }) {
-  const reduce = useReducedMotion();
-  const [step, setStep] = useState<Step>("recipient");
-  const [answers, setAnswers] = useState<Answers>({});
-  const [hobbyDraft, setHobbyDraft] = useState<string[]>([]);
-  const [result, setResult] = useState<HedisResponse | null>(null);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [draft, setDraft] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [thinkingLine, setThinkingLine] = useState(0);
-  const [returning, setReturning] = useState<{ recipient: Recipient | undefined } | null>(null);
-  const interacted = useRef(false);
+  const [returning, setReturning] = useState<string | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
-  // Yeni soru başlığı DOM'a girdiği anda odaklan (ilk yüklemede değil). Efekt yerine callback ref:
-  // geçiş animasyonu yüzünden yeni başlık, adım değiştikten bir süre sonra yüklenir.
-  const questionRef = useCallback(
-    (el: HTMLHeadingElement | null) => {
-      if (!el || !interacted.current) return;
-      el.focus({ preventScroll: true });
-      el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
-    },
-    [reduce],
-  );
-
-  const recipient = answers.recipient ? recipientByKey(answers.recipient) : undefined;
-
-  // Dönen ziyaretçiyi tanı (yalnızca tarayıcıda)
   useEffect(() => {
-    const last = readLast();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage yalnızca mount sonrası okunabilir
-    if (last) setReturning({ recipient: recipientByKey(last) });
+    setReturning(readLast());
   }, []);
 
-  // Düşünürken dönen cümleler
   useEffect(() => {
-    if (step !== "thinking") return;
-    const id = setInterval(() => setThinkingLine((n) => n + 1), 650);
+    if (!loading) return;
+    const id = setInterval(() => setThinkingLine((n) => (n + 1) % THINKING.length), 1400);
     return () => clearInterval(id);
-  }, [step]);
+  }, [loading]);
 
-  const go = (next: Step, patch: Answers = {}) => {
-    interacted.current = true;
-    setAnswers((a) => ({ ...a, ...patch }));
-    setStep(next);
-  };
+  // Yeni mesajda görünür alana kaydır
+  useEffect(() => {
+    if (entries.length === 0 && !loading) return;
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [entries.length, loading]);
 
-  const chooseRecipient = (key: string) => {
-    const r = recipientByKey(key)!;
-    // Kişi değişince sonraki cevaplar geçersiz olur
-    setAnswers({ recipient: key });
-    interacted.current = true;
-    setStep(r.gender ? "budget" : "gender");
-  };
-
-  async function fetchResults(final: Required<Pick<Answers, "recipient" | "budget" | "hobbies">> & { gender: GenderAnswer }) {
+  async function send(text: string, history = entries) {
+    const clean = text.trim();
+    if (!clean || loading) return;
+    const next: Entry[] = [...history, { role: "user", text: clean }];
+    setEntries(next);
+    setDraft("");
+    setError(null);
+    setLoading(true);
     setThinkingLine(0);
-    go("thinking", { hobbies: final.hobbies });
     try {
-      const [res] = await Promise.all([
-        fetch("/api/hedis/oneri", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(final),
-        }).then((r) => (r.ok ? (r.json() as Promise<HedisResponse>) : Promise.reject(new Error(String(r.status))))),
-        new Promise((r) => setTimeout(r, MIN_THINKING_MS)),
+      const res = await fetch("/api/hedis/sohbet", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ turns: toTurns(next) }),
+      });
+      const data = (await res.json().catch(() => ({ error: "Bağlantı sorunu" }))) as HedisChatResponse;
+      if ("error" in data) {
+        setError(data.error);
+        return;
+      }
+      setEntries([
+        ...next,
+        {
+          role: "assistant",
+          text: data.message,
+          products: data.products,
+          quickReplies: data.quickReplies,
+          profile: data.profile,
+          catalogSize: data.catalogSize,
+        },
       ]);
-      setResult(res);
-      writeLast(final.recipient);
-      setStep("results");
+      const who = data.profile.recipientText ?? (data.profile.recipient ? recipientByKey(data.profile.recipient)?.label : null);
+      if (who) writeLast(who);
     } catch {
-      setStep("error");
+      setError("Bağlantı sorunu; tekrar dener misin?");
+    } finally {
+      setLoading(false);
+      inputRef.current?.focus({ preventScroll: true });
     }
   }
 
-  const finishHobbies = (hobbies: string[]) => {
-    if (!answers.recipient || !answers.budget) return;
-    void fetchResults({ recipient: answers.recipient, budget: answers.budget, hobbies, gender: answers.gender ?? null });
+  const retry = () => {
+    const lastUser = [...entries].reverse().find((e) => e.role === "user");
+    if (!lastUser) return;
+    void send(lastUser.text, entries.slice(0, entries.lastIndexOf(lastUser)));
   };
 
   const restart = () => {
-    interacted.current = true;
-    setAnswers({});
-    setHobbyDraft([]);
-    setResult(null);
-    setStep("recipient");
+    setEntries([]);
+    setError(null);
+    setDraft("");
+    inputRef.current?.focus();
   };
 
-  const editFrom = (s: "recipient" | "gender" | "budget" | "hobbies") => {
-    interacted.current = true;
-    setResult(null);
-    if (s === "recipient") setAnswers({});
-    if (s === "gender") setAnswers((a) => ({ recipient: a.recipient }));
-    if (s === "budget") setAnswers((a) => ({ recipient: a.recipient, gender: a.gender }));
-    if (s === "hobbies") setHobbyDraft(answers.hobbies ?? []);
-    setStep(s);
-  };
-
-  const mood: MascotMood = step === "thinking" ? "thinking" : step === "results" && result && result.products.length > 0 ? "happy" : "talking";
-
-  // --- Geçmiş (cevaplanmış sorular) ---
-  const history: { q: string; a: string; edit: "recipient" | "gender" | "budget" | "hobbies" }[] = [];
-  if (answers.recipient && recipient) {
-    history.push({ q: MSG.askRecipient, a: recipient.label, edit: "recipient" });
-    if (!recipient.gender && answers.gender !== undefined) history.push({ q: MSG.askGender(recipient), a: genderLabel(answers.gender), edit: "gender" });
-    if (answers.budget) history.push({ q: MSG.askBudget(recipient), a: budgetByKey(answers.budget)!.label, edit: "budget" });
-    if (answers.hobbies && (step === "thinking" || step === "results" || step === "error"))
-      history.push({
-        q: MSG.askHobbies(recipient),
-        a: answers.hobbies.length ? answers.hobbies.map((h) => hobbyByKey(h)?.label).join(", ") : "Emin değilim",
-        edit: "hobbies",
-      });
-  }
-
-  const greeting = returning ? MSG.greetingReturning(returning.recipient) : MSG.greeting;
+  const last = entries[entries.length - 1];
+  const lastAssistant = [...entries].reverse().find((e) => e.role === "assistant");
+  const started = entries.length > 0;
+  const quickReplies = !started ? null : !loading && last?.role === "assistant" ? (last.quickReplies ?? []) : [];
+  const mood: MascotMood = loading ? "thinking" : lastAssistant?.products?.length ? "happy" : "talking";
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[12rem_1fr] lg:gap-10">
-      {/* Maskot: masaüstünde solda sabit */}
-      <div className="flex items-end gap-4 lg:sticky lg:top-6 lg:block lg:self-start">
-        <Mascot mood={mood} bumpKey={step} className="size-24 shrink-0 sm:size-28 lg:size-44" />
-        <p className="pb-3 font-el text-2xl leading-tight text-murekkep-soluk lg:mt-4 lg:pb-0">
-          Hediş, <br className="hidden lg:block" />
-          hediye bulma asistanın
-        </p>
-      </div>
-
-      <div className="min-w-0">
-        <ol aria-label="Hediş ile konuşma" className="flex flex-col gap-4">
-          <li>
-            <HedisNote>
-              <p>{greeting}</p>
-              <p className="mt-2 text-sm text-murekkep-soluk">
-                Kendin bakmayı mı tercih edersin?{" "}
-                <button type="button" onClick={onBrowseShop} className="link-el font-semibold text-murekkep">
-                  Ürünlere göz at
-                </button>
-              </p>
-            </HedisNote>
-          </li>
-          {history.map((h) => (
-            <li key={h.edit} className="flex flex-col gap-2">
-              <HedisNote compact>{h.q}</HedisNote>
-              <UserAnswer onEdit={step === "thinking" ? undefined : () => editFrom(h.edit)}>{h.a}</UserAnswer>
-            </li>
-          ))}
-        </ol>
-
-        <div aria-live="polite" className="mt-4">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.section
-              key={step}
-              initial={reduce ? false : { opacity: 0, y: 12, rotate: -0.4 }}
-              animate={{ opacity: 1, y: 0, rotate: 0 }}
-              exit={reduce ? undefined : { opacity: 0, y: -6 }}
-              transition={{ duration: 0.25 }}
-              aria-labelledby="hedis-soru"
-            >
-              {step === "recipient" && (
-                <Question title={MSG.askRecipient} questionRef={questionRef}>
-                  <div className="flex flex-wrap gap-2">
-                    {RECIPIENTS.map((r) => (
-                      <TagChip key={r.key} onClick={() => chooseRecipient(r.key)} active={answers.recipient === r.key}>
-                        {r.label}
-                      </TagChip>
-                    ))}
-                  </div>
-                </Question>
-              )}
-
-              {step === "gender" && recipient && (
-                <Question title={MSG.askGender(recipient)} questionRef={questionRef}>
-                  <div className="flex flex-wrap gap-2">
-                    {(["KADIN", "ERKEK", null] as const).map((g) => (
-                      <TagChip key={String(g)} onClick={() => go("budget", { gender: g })}>
-                        {genderLabel(g)}
-                      </TagChip>
-                    ))}
-                  </div>
-                </Question>
-              )}
-
-              {step === "budget" && recipient && (
-                <Question title={MSG.askBudget(recipient)} questionRef={questionRef}>
-                  <div className="flex flex-wrap gap-2">
-                    {BUDGETS.map((b) => (
-                      <TagChip key={b.key} className="text-base" onClick={() => go("hobbies", { budget: b.key })}>
-                        {b.label}
-                      </TagChip>
-                    ))}
-                  </div>
-                </Question>
-              )}
-
-              {step === "hobbies" && recipient && (
-                <Question title={MSG.askHobbies(recipient)} questionRef={questionRef}>
-                  <div className="flex flex-wrap gap-2">
-                    {HOBBIES.map((h) => {
-                      const on = hobbyDraft.includes(h.key);
-                      const full = hobbyDraft.length >= MAX_HOBBIES && !on;
-                      return (
-                        <TagChip
-                          key={h.key}
-                          active={on}
-                          disabled={full}
-                          className={full ? "opacity-45" : ""}
-                          onClick={() => setHobbyDraft((d) => (on ? d.filter((k) => k !== h.key) : [...d, h.key]))}
-                        >
-                          {h.label}
-                        </TagChip>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-5 flex flex-wrap items-center gap-3">
-                    <button type="button" className="btn btn-ana" disabled={hobbyDraft.length === 0} onClick={() => finishHobbies(hobbyDraft)}>
-                      Hediyeleri göster
-                    </button>
-                    <button
-                      type="button"
-                      className="px-2 py-2 font-semibold text-murekkep-soluk underline-offset-4 hover:text-murekkep hover:underline"
-                      onClick={() => {
-                        setHobbyDraft([]);
-                        finishHobbies([]);
-                      }}
-                    >
-                      Emin değilim, sen seç
-                    </button>
-                    <span className="text-sm text-murekkep-soluk" aria-live="polite">
-                      {hobbyDraft.length}/{MAX_HOBBIES} seçildi
-                    </span>
-                  </div>
-                </Question>
-              )}
-
-              {step === "thinking" && recipient && (
-                <HedisNote>
-                  <div className="flex items-center gap-4">
-                    {/* Mobilde büyük maskot ekranın yukarısında kalır; burada küçüğü görünsün */}
-                    <Mascot mood="thinking" className="size-16 shrink-0 lg:hidden" />
-                    <div>
-                      <h2 id="hedis-soru" ref={questionRef} tabIndex={-1} className="font-el text-3xl font-normal outline-none">
-                        {MSG.thinking(recipient)[Math.min(thinkingLine, MSG.thinking(recipient).length - 1)]}
-                      </h2>
-                      <ThinkingDots />
-                    </div>
-                  </div>
-                </HedisNote>
-              )}
-
-              {step === "error" && (
-                <HedisNote>
-                  <h2 id="hedis-soru" ref={questionRef} tabIndex={-1} className="text-xl outline-none">
-                    {MSG.error}
-                  </h2>
-                  <button type="button" className="btn btn-ana mt-4" onClick={() => finishHobbies(answers.hobbies ?? [])}>
-                    Tekrar dene
-                  </button>
-                </HedisNote>
-              )}
-
-              {step === "results" && recipient && result && (
-                <Results recipient={recipient} result={result} questionRef={questionRef} onRestart={restart} onBrowseShop={onBrowseShop} />
-              )}
-            </motion.section>
-          </AnimatePresence>
+    <div className="mx-auto flex w-full max-w-3xl flex-col">
+      <div className="flex items-center gap-3">
+        <Mascot mood={mood} bumpKey={entries.length} className="size-16 shrink-0 sm:size-20" />
+        <div>
+          <p className="font-baslik text-2xl leading-tight">Hediş</p>
+          <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-hardal/25 px-2 py-0.5 text-xs font-bold text-kiremit-koyu">
+            <AiSparkle className="size-3.5" /> yapay zeka destekli hediye asistanı
+          </p>
         </div>
       </div>
+
+      <ol aria-label="Hediş ile konuşma" aria-live="polite" className="mt-6 flex flex-col gap-4">
+        <li>
+          <HedisNote>
+            <p>
+              {returning
+                ? `Yine hoş geldin! Geçen sefer ${returning} için bakmıştık. Bu sefer kime hediye arıyoruz?`
+                : "Merhaba, ben Hediş! Kime hediye alacağını bana anlat, gerisini birlikte bulalım."}
+            </p>
+            {!started && (
+              <p className="mt-1.5 text-sm text-murekkep-soluk">
+                Bir seçeneğe dokunabilir ya da kendi cümlenle yazabilirsin: &ldquo;Yeni işe başlayan kız arkadaşıma bir şey
+                arıyorum&rdquo; gibi.
+              </p>
+            )}
+          </HedisNote>
+        </li>
+
+        {entries.map((e, i) =>
+          e.role === "user" ? (
+            <li key={i} className="flex justify-end">
+              <UserBubble>{e.text}</UserBubble>
+            </li>
+          ) : (
+            <li key={i} className="flex flex-col gap-4">
+              <HedisNote>
+                <p>{e.text}</p>
+              </HedisNote>
+              {e.products && e.products.length > 0 && <Results products={e.products} profile={e.profile} catalogSize={e.catalogSize} />}
+            </li>
+          ),
+        )}
+
+        {loading && (
+          <li>
+            <HedisNote>
+              <p className="ai-isilti font-semibold">{THINKING[thinkingLine]}</p>
+              <ThinkingDots />
+            </HedisNote>
+          </li>
+        )}
+
+        {error && (
+          <li>
+            <div role="alert" className="rounded-lg border-l-4 border-kiremit bg-kagit px-4 py-3">
+              <p className="font-semibold">{error}</p>
+              <div className="mt-2 flex flex-wrap gap-3 text-sm">
+                <button type="button" onClick={retry} className="font-semibold underline underline-offset-2">
+                  Tekrar dene
+                </button>
+                <button type="button" onClick={onBrowseShop} className="font-semibold underline underline-offset-2">
+                  Ürünlere göz at
+                </button>
+              </div>
+            </div>
+          </li>
+        )}
+      </ol>
+      <div ref={endRef} />
+
+      {/* Hızlı cevaplar: başta kişiler, sonra Hediş'in önerdikleri */}
+      {!started ? (
+        <div className="mt-5 flex flex-wrap gap-2" aria-label="Hızlı seçenekler">
+          {STARTERS.map((s) => (
+            <button
+              key={s.label}
+              type="button"
+              onClick={() => (s.text ? void send(s.text) : inputRef.current?.focus())}
+              className="rounded-full border-[1.5px] border-murekkep bg-kagit px-4 py-2 text-[0.95rem] font-semibold transition-colors hover:bg-murekkep hover:text-kagit"
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      ) : (
+        quickReplies &&
+        quickReplies.length > 0 && (
+          <div className="mt-4 flex flex-wrap justify-end gap-2" aria-label="Hazır cevaplar">
+            {quickReplies.map((q) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => void send(q)}
+                className="rounded-full border-[1.5px] border-dashed border-kiremit bg-kagit px-3.5 py-1.5 text-sm font-semibold text-kiremit-koyu transition-colors hover:border-solid hover:bg-kiremit hover:text-kagit"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )
+      )}
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void send(draft);
+        }}
+        className="sticky bottom-0 z-10 -mx-1 mt-5 bg-krem px-1 pt-2 pb-1"
+      >
+        <div className="ai-kenar" data-calisiyor={loading ? "true" : "false"}>
+          <div className="flex items-end gap-2 rounded-[0.75rem] bg-kagit p-2">
+            <label htmlFor="hedis-girdi" className="sr-only">
+              Hediş&apos;e yaz
+            </label>
+            <textarea
+              id="hedis-girdi"
+              ref={inputRef}
+              rows={1}
+              value={draft}
+              maxLength={600}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void send(draft);
+                }
+              }}
+              placeholder={started ? "Yaz ya da seçeneğe dokun…" : "Kime hediye alıyorsun?"}
+              className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-2 py-2.5 text-base outline-none placeholder:text-murekkep-soluk/80"
+            />
+            <button type="submit" disabled={loading || !draft.trim()} aria-label="Gönder" className="btn btn-ana size-11 shrink-0 !p-0">
+              <svg viewBox="0 0 20 20" className="size-5" fill="currentColor" aria-hidden>
+                <path d="M3.4 2.6a.75.75 0 0 0-1 .9l1.9 6.5-1.9 6.5a.75.75 0 0 0 1 .9l14.5-6.7a.75.75 0 0 0 0-1.4L3.4 2.6Zm2.3 8.15h5.55a.75.75 0 0 0 0-1.5H5.7L4.3 4.5 15.6 10 4.3 15.5l1.4-4.75Z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        {started && (
+          <div className="mt-2 flex flex-wrap justify-between gap-2 text-sm">
+            <button type="button" onClick={restart} className="text-murekkep-soluk underline-offset-2 hover:text-murekkep hover:underline">
+              Baştan başla
+            </button>
+            <button type="button" onClick={onBrowseShop} className="font-semibold text-murekkep-soluk underline-offset-2 hover:text-murekkep hover:underline">
+              Diğer ürünlere göz at →
+            </button>
+          </div>
+        )}
+      </form>
     </div>
   );
 }
 
-function HedisNote({ children, compact = false }: { children: React.ReactNode; compact?: boolean }) {
+function HedisNote({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`kagit relative max-w-xl ${compact ? "px-4 py-2.5 text-[0.95rem] text-murekkep-soluk" : "px-5 pt-6 pb-5"}`}>
-      {!compact && <Tape color="gul" rotate={-4} className="-top-3 left-5 h-5 w-16" />}
-      {!compact && <span className="mb-1 block font-el text-lg leading-none text-kiremit-koyu">Hediş</span>}
+    <div className="kagit relative max-w-xl rounded-sm px-5 pt-6 pb-4">
+      <Tape color="gul" rotate={-4} className="-top-3 left-5 h-5 w-16" />
+      <span className="mb-1 flex items-center gap-1 font-el text-lg leading-none text-kiremit-koyu">Hediş</span>
       {children}
     </div>
   );
 }
 
-function UserAnswer({ children, onEdit }: { children: React.ReactNode; onEdit?: () => void }) {
+function UserBubble({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-end gap-3">
-      {onEdit && (
-        <button type="button" onClick={onEdit} className="text-sm text-murekkep-soluk underline-offset-2 hover:text-murekkep hover:underline">
-          değiştir
-        </button>
-      )}
-      <span
-        className="relative inline-flex items-center bg-murekkep py-1.5 pr-4 pl-7 font-semibold text-kagit"
-        style={{ clipPath: "polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 50%)" }}
-      >
-        <span aria-hidden className="absolute top-1/2 left-2.5 size-1.5 -translate-y-1/2 rounded-full bg-krem" />
-        <span className="sr-only">Senin cevabın: </span>
-        {children}
-      </span>
-    </div>
-  );
-}
-
-function Question({
-  title,
-  children,
-  questionRef,
-}: {
-  title: string;
-  children: React.ReactNode;
-  questionRef: React.Ref<HTMLHeadingElement>;
-}) {
-  return (
-    <div className="flex flex-col gap-4">
-      <HedisNote>
-        <h2 id="hedis-soru" ref={questionRef} tabIndex={-1} className="font-govde text-xl leading-snug font-bold outline-none">
-          {title}
-        </h2>
-      </HedisNote>
-      <div className="pl-1">{children}</div>
-    </div>
+    <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-murekkep px-4 py-2.5 text-kagit">
+      <span className="sr-only">Sen: </span>
+      {children}
+    </p>
   );
 }
 
 function ThinkingDots() {
   return (
-    <span aria-hidden className="mt-3 flex gap-2">
+    <span aria-hidden className="mt-2 flex gap-1.5">
       {[0, 1, 2].map((i) => (
-        <motion.span
-          key={i}
-          className="size-2.5 rounded-full bg-kiremit"
-          animate={{ y: [0, -6, 0], opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15 }}
-        />
+        <span key={i} className="size-2 animate-bounce rounded-full bg-kiremit" style={{ animationDelay: `${i * 0.15}s` }} />
       ))}
     </span>
   );
 }
 
-function Results({
-  recipient,
-  result,
-  questionRef,
-  onRestart,
-  onBrowseShop,
-}: {
-  recipient: Recipient;
-  result: HedisResponse;
-  questionRef: React.Ref<HTMLHeadingElement>;
-  onRestart: () => void;
-  onBrowseShop: () => void;
-}) {
-  const n = result.products.length;
+function ProfileChips({ profile }: { profile?: ChatProfile }) {
+  if (!profile) return null;
+  const chips = [
+    profile.recipientText ?? (profile.recipient ? recipientByKey(profile.recipient)?.label : null),
+    profile.occasion ? occasionByKey(profile.occasion)?.label : null,
+    profile.budgetMaxKurus ? `en fazla ${formatPrice(profile.budgetMaxKurus).replace(/ /g, " ")}` : null,
+  ].filter((c): c is string => !!c);
+  if (chips.length === 0) return null;
   return (
-    <div>
-      <h2 id="hedis-soru" ref={questionRef} tabIndex={-1} className="text-3xl outline-none sm:text-4xl">
-        {n > 0 ? <Scribble>{MSG.resultTitle(recipient, n)}</Scribble> : "Hmm…"}
-      </h2>
-      <p className="mt-4 max-w-xl">{MSG.resultIntro(result.strongCount, n)}</p>
+    <ul className="flex flex-wrap gap-1.5" aria-label="Hediş'in anladıkları">
+      {chips.map((c) => (
+        <li key={c} className="rounded-full bg-krem-koyu px-2.5 py-0.5 text-xs font-semibold">
+          {c}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
-      {n > 0 && (
-        <ul className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 sm:gap-x-6">
-          {result.products.map((p, i) => (
-            <li key={p.id}>
-              <ResultCard product={p} index={i} />
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="mt-12 flex flex-wrap items-center gap-3 border-t-2 border-dashed border-kraft-koyu pt-6">
-        <button type="button" onClick={onBrowseShop} className="btn btn-ana">
-          Diğer ürünlere göz at →
-        </button>
-        <button type="button" className="btn btn-ikincil" onClick={onRestart}>
-          Baştan başla
-        </button>
+function Results({ products, profile, catalogSize }: { products: HedisProduct[]; profile?: ChatProfile; catalogSize?: number }) {
+  return (
+    <div className="rounded-xl border-2 border-dashed border-kraft-koyu p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-murekkep-soluk">
+          <AiSparkle className="size-4" />
+          {catalogSize ? `${catalogSize} ürün arasından senin için seçtim` : "Senin için seçtim"}
+        </p>
+        <ProfileChips profile={profile} />
       </div>
+      <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3">
+        {products.map((p, i) => (
+          <li key={p.id}>
+            <ResultCard product={p} index={i} />
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -417,14 +368,15 @@ function ResultCard({ product, index }: { product: HedisProduct; index: number }
   const inCart = useCart((s) => s.lines.some((l) => l.productId === product.id));
   return (
     <ProductCard product={product} index={index} priority={index < 2}>
-      <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Neden önerdim">
-        {product.fallback && <li className="bg-krem-koyu px-1.5 py-0.5 text-xs font-semibold text-murekkep-soluk">alternatif</li>}
-        {product.reasons.map((r) => (
-          <li key={r} className="border border-zeytin/50 px-1.5 py-0.5 text-xs font-semibold text-zeytin">
-            {r}
-          </li>
-        ))}
-      </ul>
+      {product.reasons.length > 0 && (
+        <p className="mt-2.5 flex gap-1.5 text-sm leading-snug text-murekkep-soluk">
+          <AiSparkle className="mt-0.5 size-3.5 shrink-0" />
+          <span>
+            <span className="sr-only">Neden önerdim: </span>
+            {product.reasons.join(" · ")}
+          </span>
+        </p>
+      )}
       <button
         type="button"
         onClick={() => add(product.id)}
