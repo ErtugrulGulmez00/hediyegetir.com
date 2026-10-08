@@ -1,9 +1,9 @@
-// Yerel veritabanındaki ürünleri, kategorileri ve ayarları başka bir veritabanına (ör. Neon) bir kez taşır.
+// Yerel veritabanındaki ürünleri, kategorileri ve ayarları başka bir veritabanına (ör. Supabase) bir kez taşır.
 // Fotoğrafları Vercel Blob'a yükler. Tekrar çalıştırılabilir: hedefte aynı adresli (slug) ürün varsa atlanır.
 //
 // Kullanım (PowerShell):
 //   $env:KAYNAK_DATABASE_URL="postgresql://hediye:hediye@localhost:5433/hediyegetir"
-//   $env:HEDEF_DATABASE_URL="<Neon havuzsuz adres>"
+//   $env:HEDEF_DATABASE_URL="<Supabase Session pooler adresi>"
 //   $env:BLOB_READ_WRITE_TOKEN="<Vercel Blob anahtarı>"
 //   npm run urun-aktar             # önce --dene ile neyin taşınacağını görebilirsin
 import "dotenv/config";
@@ -51,6 +51,7 @@ async function main() {
         whatsappNumber: settings.whatsappNumber,
         whatsappGreeting: settings.whatsappGreeting,
         instagramUrl: settings.instagramUrl,
+        aiModel: settings.aiModel,
       };
       console.log(`Ayarlar kopyalanıyor (WhatsApp: ${data.whatsappNumber || "boş"})`);
       if (!DRY_RUN) await dst.settings.create({ data });
@@ -115,6 +116,9 @@ async function main() {
           gender: p.gender,
           hobbies: p.hobbies,
           hedisReviewed: p.hedisReviewed,
+          occasions: p.occasions,
+          tags: p.tags,
+          features: p.features,
           createdAt: p.createdAt,
           categoryId: p.categoryId ? (categoryMap.get(p.categoryId) ?? null) : null,
           images: { create: images },

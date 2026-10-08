@@ -3,7 +3,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "./db";
 import { budgetByKey, type BudgetKey } from "./hedis/config";
-import type { Filters, SortKey } from "./shop-filters";
+import { matchesSearch, type Filters, type SortKey } from "./shop-filters";
 
 // Katalog okumaları önbellekli. Admin'deki değişiklikler updateTag(CATALOG_TAG) ile hemen tazeler;
 // veritabanına doğrudan yapılan değişiklikler (ör. urun-aktar betiği) en geç bir saatte görünür.
@@ -50,18 +50,42 @@ export async function getCategories() {
   });
 }
 
-export async function getShopProducts(filters: Filters) {
+export async function getShopProducts(filters: Filters): Promise<ProductCardData[]> {
   "use cache";
   cacheTag(CATALOG_TAG);
   cacheLife("hours");
-  return db.product.findMany({
+  const rows = await db.product.findMany({
     where: {
       isActive: true,
       ...(filters.category ? { category: { slug: filters.category } } : {}),
       ...(filters.budget ? { priceKurus: priceWhere(filters.budget) } : {}),
     },
     orderBy: SORT_ORDER[filters.sort],
-    select: cardSelect,
+    select: { ...cardSelect, description: true, tags: true },
+  });
+  // Arama JS'te: veritabanı yerel ayarından bağımsız Türkçe harf/aksan katlama ("canta" → "Çanta")
+  const { q } = filters;
+  const matched = q ? rows.filter((p) => matchesSearch([p.name, p.description, p.category?.name ?? "", ...p.tags], q)) : rows;
+  return matched.map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    name: p.name,
+    priceKurus: p.priceKurus,
+    compareAtPriceKurus: p.compareAtPriceKurus,
+    stock: p.stock,
+    category: p.category,
+    images: p.images,
+  }));
+}
+
+/** Kategori sayfası için; yayında ürünü olmayan kategori yok sayılır */
+export async function getCategoryBySlug(slug: string) {
+  "use cache";
+  cacheTag(CATALOG_TAG);
+  cacheLife("hours");
+  return db.category.findFirst({
+    where: { slug, products: { some: { isActive: true } } },
+    select: { id: true, name: true, slug: true },
   });
 }
 

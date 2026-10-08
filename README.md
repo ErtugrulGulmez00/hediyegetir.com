@@ -6,7 +6,7 @@ Mimari ve aşama planı: [ProjeMimarisi.md](ProjeMimarisi.md)
 
 ## Yığın
 
-Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind v4 · Prisma 7 + PostgreSQL (yerelde Docker, yayında Neon) · Vercel Blob · Zustand · zod · motion · vitest · Playwright
+Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind v4 · Prisma 7 + PostgreSQL (yerelde Docker ya da `prisma dev`, yayında Supabase) · Vercel Blob · Zustand · zod · motion · vitest · Playwright
 
 ## Yerelde çalıştırma
 
@@ -15,11 +15,15 @@ npm install
 cp .env.example .env          # sonra AUTH_SECRET, VISITOR_SALT, ADMIN_PASSWORD_HASH doldur
 npm run db:up                 # Postgres'i Docker'da 5433 portunda başlatır
 npm run db:migrate            # şemayı uygular
-npm run db:seed               # ayarlar satırı (örnek ürünler için: npm run db:seed -- --demo)
+npm run db:seed               # ayarlar satırı (örnek ürünler için: npx prisma db seed -- --demo)
 npm run dev
 ```
 
+Docker yoksa: `npx prisma dev --name hediyegetir --detach` yerel bir Postgres başlatır. Yazdırdığı `postgres://…` adresini `.env`'deki `DATABASE_URL` ve `DIRECT_URL`'e yaz, `DATABASE_POOL_MAX="1"` ekle (bu yerel sunucu aynı anda çok bağlantıda bağlantı düşürebiliyor), sonra `npx prisma migrate deploy` ile devam et. Bilgisayar yeniden başlayınca: `npx prisma dev start hediyegetir`.
+
 Admin paneli: http://localhost:3000/admin
+
+Hediş, yapay zeka anahtarı (`OPENAI_API_KEY` / `OPENROUTER_API_KEY`) yokken ya da bakiye bitince seçenekli rehber moda geçer: kime → bütçe → ilgi alanları sorulur, kural tabanlı motor öneri yapar.
 
 ## Komutlar
 
@@ -27,24 +31,26 @@ Admin paneli: http://localhost:3000/admin
 | --- | --- |
 | `npm run dev` | Geliştirme sunucusu |
 | `npm test` | Birim testleri (vitest) |
-| `npm run test:e2e` | Uçtan uca testler (Playwright; admin testleri için `E2E_ADMIN_PASSWORD` gerekir) |
+| `npm run test:e2e` | Uçtan uca testler (Playwright; admin testleri için `E2E_ADMIN_PASSWORD` gerekir). Hediş sohbet testleri yapay zekayı taklit eder ama dev sunucusunda bir `OPENAI_API_KEY` tanımlı olmalı (sahte bir değer yeter); yoksa Hediş rehber modunda açılır |
 | `npm run typecheck` | TypeScript kontrolü |
 | `npm run db:studio` | Prisma Studio ile veritabanına göz at |
 | `npm run urun-aktar` | Yerel ürünleri/kategorileri/ayarları başka bir veritabanına taşır, fotoğrafları Blob'a yükler (yayına ilk geçişte bir kez) |
 | `npm run hash-password -- "şifre"` | Admin şifresi için bcrypt hash üretir |
 
-## Yayına alma (Vercel + Neon + Blob)
+## Yayına alma (Vercel + Supabase + Blob)
 
-1. **Neon:** Yeni proje aç (bölge: Frankfurt `eu-central-1`). *Connection string* ekranından iki adres al:
-   havuzlu (`-pooler` içeren) → `DATABASE_URL`, havuzsuz → `DIRECT_URL`.
+1. **Supabase:** Proje aç (bölge: Frankfurt `eu-central-1`). Proje sayfasında **Connect → ORMs → Prisma** sekmesindeki iki adresi al:
+   *Transaction pooler* (port `6543`) → `DATABASE_URL`, *Session pooler* (port `5432`, `pooler.supabase.com`) → `DIRECT_URL`.
+   Doğrudan bağlantı adresi (`db.<proje>.supabase.co`) yalnızca IPv6 destekler; Vercel'de çalışmaz, kullanma.
+   Supabase CLI (`supabase init/link`) gerekmez: şemayı Prisma migration'ları kurar.
 2. **Vercel:** GitHub reposunu içe aktar (Framework: Next.js; ayar değiştirmeye gerek yok, `vercel-build` migration'ları kendisi çalıştırır).
 3. **Vercel Blob:** Projede *Storage → Create → Blob*. `BLOB_READ_WRITE_TOKEN` otomatik eklenir.
 4. **Ortam değişkenleri** (Vercel → Settings → Environment Variables, *Production*):
 
    | Değişken | Değer |
    | --- | --- |
-   | `DATABASE_URL` | Neon havuzlu adres |
-   | `DIRECT_URL` | Neon havuzsuz adres |
+   | `DATABASE_URL` | Supabase *Transaction pooler* adresi (6543) |
+   | `DIRECT_URL` | Supabase *Session pooler* adresi (5432) |
    | `NEXT_PUBLIC_SITE_URL` | `https://hediyegetir.com` |
    | `WHATSAPP_NUMBER_FALLBACK` | `905050434796` |
    | `ADMIN_USERNAME` | admin kullanıcı adı |
@@ -58,8 +64,8 @@ Admin paneli: http://localhost:3000/admin
 5. **Deploy** et. İlk deploy migration'ları uygular.
 6. **Ürünleri taşı (bir kez):** Yerel veritabanındaki ürünler, kategoriler ve ayarlar yayına bu bilgisayardan taşınır; fotoğraflar Blob'a yüklenir.
    ```powershell
-   $env:KAYNAK_DATABASE_URL="postgresql://hediye:hediye@localhost:5433/hediyegetir"
-   $env:HEDEF_DATABASE_URL="<Neon havuzsuz adres>"
+   $env:KAYNAK_DATABASE_URL="<yerel veritabanı: .env'deki DATABASE_URL>"
+   $env:HEDEF_DATABASE_URL="<Supabase Session pooler adresi>"
    $env:BLOB_READ_WRITE_TOKEN="<Vercel Blob anahtarı>"
    npm run urun-aktar -- --dene   # önce neyin taşınacağını gör
    npm run urun-aktar
@@ -72,7 +78,8 @@ Admin paneli: http://localhost:3000/admin
 
 - [ ] Ana sayfaya ilk girişte Hediş penceresi açılıyor, akış baştan sona çalışıyor, 5 (veya daha az, dürüst mesajlı) öneri geliyor
 - [ ] Ürün fotoğrafları `*.public.blob.vercel-storage.com` adresinden yükleniyor
-- [ ] Sepet → *WhatsApp ile bilgi al* doğru numarayı ve ürün linklerini (`https://hediyegetir.com/urun/...`) içeriyor
+- [ ] Sepet → *Siparişi WhatsApp'tan gönder* doğru numarayı, ürün linklerini (`https://hediyegetir.com/urun/...`) ve (eklendiyse) hediye paketi/notu içeriyor
+- [ ] `/kategori/...`, `/nasil-siparis-verilir` ve `/hakkimizda` sayfaları açılıyor; vitrin araması çalışıyor
 - [ ] Admin panelinden ürün fiyatı değişince sitede hemen görünüyor
 - [ ] Admin'den fotoğraf yükleme çalışıyor
 - [ ] Özet sayfasında (başka bir cihazdan girince) ziyaretler artıyor

@@ -4,9 +4,18 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
-  // Mağaza ana sayfaya taşındı; eski linkler (filtreler dahil) kırılmasın
+  // Mağaza ana sayfaya taşındı; eski linkler (filtreler dahil) kırılmasın.
+  // Kategori filtresi artık kendi sayfası: /?kategori=canta -> /kategori/canta (diğer filtreler korunur)
   async redirects() {
-    return [{ source: "/magaza", destination: "/", permanent: true }];
+    return [
+      { source: "/magaza", destination: "/", permanent: true },
+      {
+        source: "/",
+        has: [{ type: "query", key: "kategori", value: "(?<kategori>[a-z0-9-]+)" }],
+        destination: "/kategori/:kategori",
+        permanent: true,
+      },
+    ];
   },
   images: {
     qualities: [75],

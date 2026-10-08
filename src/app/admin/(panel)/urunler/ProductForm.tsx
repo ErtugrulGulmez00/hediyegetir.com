@@ -13,6 +13,7 @@ import { createCategoryQuickAction, deleteProductAction, saveProductAction, type
 import { Field, inputClass } from "../ui";
 import { AiPanel, AiProposal, type AiState } from "./AiPanel";
 import { nextImgKey, PhotoUploader, type ImgItem } from "./PhotoUploader";
+import { useUnsavedChangesGuard } from "./useUnsavedChangesGuard";
 
 export type ProductFormInitial = {
   id: string | null;
@@ -217,6 +218,12 @@ export function ProductForm({
     features: v.features,
     images: images.filter((i) => !i.uploading).map(({ id, url, alt, isBlob }) => ({ id, url, alt, isBlob })),
   };
+
+  // Kaydedilmemiş değişiklik varken sayfadan ayrılırken uyar. Kayıttan sonra form yeniden kurulduğu için
+  // (bkz. [id]/page.tsx'teki key) başlangıç hâli de sıfırlanır.
+  const payloadJson = JSON.stringify(payload);
+  const [savedJson] = useState(payloadJson);
+  useUnsavedChangesGuard((payloadJson !== savedJson || uploading) && !pending);
 
   const badge = (f: AiField) => (aiFields.has(f) ? <AiBadge /> : null);
   const canRunAi = images.some((i) => i.url && !i.uploading) || v.name.trim().length >= 3;

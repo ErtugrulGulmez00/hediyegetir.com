@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AddToCart } from "@/components/site/AddToCart";
+import { OrderInfo } from "@/components/site/OrderInfo";
 import { ProductCard } from "@/components/site/ProductCard";
 import { ProductGallery } from "@/components/site/ProductGallery";
 import { PriceTag } from "@/components/ui/PriceTag";
@@ -83,7 +84,7 @@ async function ProductDetails({ params }: Pick<PageProps<"/urun/[slug]">, "param
         {product.category && (
           <>
             <span aria-hidden className="mx-2">/</span>
-            <Link href={`/?kategori=${product.category.slug}#urunler`} className="hover:text-murekkep hover:underline">
+            <Link href={`/kategori/${product.category.slug}`} className="hover:text-murekkep hover:underline">
               {product.category.name}
             </Link>
           </>
@@ -106,7 +107,7 @@ async function ProductDetails({ params }: Pick<PageProps<"/urun/[slug]">, "param
           />
 
           <div className="mt-8">
-            <AddToCart productId={product.id} soldOut={soldOut} />
+            <AddToCart productId={product.id} soldOut={soldOut} name={product.name} priceKurus={product.priceKurus} />
           </div>
 
           {askLink && (
@@ -114,6 +115,8 @@ async function ProductDetails({ params }: Pick<PageProps<"/urun/[slug]">, "param
               <WhatsAppIcon /> WhatsApp&apos;tan sor
             </a>
           )}
+
+          <OrderInfo className="mt-6" />
 
           {product.description && (
             <div className="mt-10">
@@ -154,9 +157,6 @@ async function ProductDetails({ params }: Pick<PageProps<"/urun/[slug]">, "param
             </div>
           )}
 
-          <p className="mt-8 border-l-4 border-hardal bg-kagit/70 px-4 py-3 text-[0.95rem]">
-            Online ödeme yok. Sepetini WhatsApp&apos;tan gönderirsin; renk, ödeme ve kargoyu birlikte netleştiririz.
-          </p>
         </div>
       </div>
 

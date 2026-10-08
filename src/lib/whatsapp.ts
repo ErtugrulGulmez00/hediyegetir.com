@@ -22,17 +22,25 @@ export function cartSubtotal(lines: Pick<WaLine, "qty" | "unitPriceKurus">[]): n
   return lines.reduce((sum, l) => sum + l.qty * l.unitPriceKurus, 0);
 }
 
-export function buildCartMessage(greeting: string, lines: WaLine[]): string {
+/** Sepetteki isteğe bağlı eklemeler: hediye paketi ve not (renk, beden, hediye notu) */
+export type CartExtras = { note?: string; giftWrap?: boolean };
+
+export const MAX_NOTE_LENGTH = 300;
+
+export function buildCartMessage(greeting: string, lines: WaLine[], extras: CartExtras = {}): string {
   const items = lines.map((l, i) => {
     const total = l.qty > 1 ? ` = ${formatPrice(l.qty * l.unitPriceKurus)}` : "";
     return `${i + 1}) ${l.name}\n   ${l.qty} adet × ${formatPrice(l.unitPriceKurus)}${total}\n   ${l.url}`;
   });
+  const note = extras.note?.trim().slice(0, MAX_NOTE_LENGTH).replace(/\n{3,}/g, "\n\n");
   return [
     greeting.trim(),
     "",
     items.join("\n\n"),
     "",
     `Ara toplam: ${formatPrice(cartSubtotal(lines))}`,
+    ...(extras.giftWrap ? ["Hediye paketi istiyorum."] : []),
+    ...(note ? [`Not: ${note}`] : []),
     "Ödeme ve kargo detaylarını konuşabilir miyiz?",
   ]
     .join("\n")

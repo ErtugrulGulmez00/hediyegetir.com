@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BUDGETS } from "@/lib/hedis/config";
-import { hrefWith, SORT_OPTIONS, type Filters, type SortKey } from "@/lib/shop-filters";
+import { hrefWith, MAX_SEARCH_LENGTH, SORT_OPTIONS, type Filters, type SortKey } from "@/lib/shop-filters";
 
 export type ToolbarCategory = { slug: string; name: string; count: number };
 
@@ -37,7 +37,8 @@ export function ShopToolbar({ categories, filters, total }: { categories: Toolba
             <span className="sm:hidden">Tümü</span>
           </button>
         </div>
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 lg:flex-nowrap">
+            <SearchBox filters={filters} />
             <FilterSelect
               label="Bütçe"
               value={filters.budget ?? ""}
@@ -59,6 +60,7 @@ export function ShopToolbar({ categories, filters, total }: { categories: Toolba
       </div>
       <p className="mt-2 text-sm text-murekkep-soluk" aria-live="polite">
         {total} ürün{activeName ? ` · ${activeName}` : ""}
+        {filters.q ? ` · “${filters.q}” araması` : ""}
       </p>
       <AllCategoriesDialog open={allOpen} onClose={() => setAllOpen(false)} categories={categories} filters={filters} />
     </div>
@@ -139,6 +141,49 @@ function ArrowButton({ side, onClick }: { side: "left" | "right"; onClick: () =>
         <path d="m6 3 5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </button>
+  );
+}
+
+/** Ürün araması: ad, açıklama, kategori ve etiketlerde ("canta" yazınca "Çanta" da bulunur). */
+function SearchBox({ filters }: { filters: Filters }) {
+  const router = useRouter();
+  const [value, setValue] = useState(filters.q ?? "");
+  // Adres değişince (ör. "Aramayı temizle") kutu da güncellensin
+  const [shown, setShown] = useState(filters.q);
+  if (shown !== filters.q) {
+    setShown(filters.q);
+    setValue(filters.q ?? "");
+  }
+  const submit = (q: string) => router.push(hrefWith(filters, { q: q.trim() || undefined }), { scroll: false });
+
+  return (
+    <form
+      role="search"
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit(value);
+      }}
+      className="relative flex h-9 min-w-0 basis-full items-center rounded-full border-[1.5px] border-kraft-koyu/70 bg-kagit focus-within:border-murekkep hover:border-murekkep lg:w-56 lg:basis-auto"
+    >
+      <svg viewBox="0 0 16 16" className="pointer-events-none absolute left-3 size-4 text-murekkep-soluk" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+        <circle cx="7" cy="7" r="4.5" />
+        <path d="m10.5 10.5 3 3" />
+      </svg>
+      <input
+        type="search"
+        name="ara"
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+          // Kutudaki × ile temizlenince arama da kalksın
+          if (!e.target.value && filters.q) submit("");
+        }}
+        maxLength={MAX_SEARCH_LENGTH}
+        placeholder="Ürün ara…"
+        aria-label="Ürün ara"
+        className="h-full w-full min-w-0 rounded-full bg-transparent pr-3 pl-9 text-sm outline-none placeholder:text-murekkep-soluk/80"
+      />
+    </form>
   );
 }
 

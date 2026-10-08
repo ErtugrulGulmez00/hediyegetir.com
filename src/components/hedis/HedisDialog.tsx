@@ -3,14 +3,19 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HEDIS_SEEN_KEY, useHedisDialog } from "@/store/hedis";
+import { useStickyBuyBar } from "@/store/ui";
 import { HedisChat } from "./HedisChat";
+import { HedisRehber } from "./HedisRehber";
 import { Mascot } from "./Mascot";
+
+type Mode = { kind: "ai" } | { kind: "rehber"; recipient: string | null; switched: boolean };
 
 /**
  * Site genelindeki Hediş penceresi. Yerel <dialog> kullanır: odak pencere içinde kalır,
  * Esc ve arka plana tıklama kapatır, kapanınca odak açan düğmeye döner.
+ * Yapay zeka yoksa (ya da sohbet bir sorun yüzünden açılamazsa) seçenekli rehber moda geçer.
  */
-export function HedisDialog() {
+export function HedisDialog({ aiOnline }: { aiOnline: boolean }) {
   const open = useHedisDialog((s) => s.open);
   const closeHedis = useHedisDialog((s) => s.closeHedis);
   const ref = useRef<HTMLDialogElement>(null);
@@ -18,6 +23,7 @@ export function HedisDialog() {
   const router = useRouter();
   // Sohbet ilk açılışta kurulur, sonra kapatıp açınca kaldığı yerden devam eder
   const [mounted, setMounted] = useState(false);
+  const [mode, setMode] = useState<Mode>(aiOnline ? { kind: "ai" } : { kind: "rehber", recipient: null, switched: false });
 
   useEffect(() => {
     const d = ref.current;
@@ -76,7 +82,12 @@ export function HedisDialog() {
             Kapat <span aria-hidden>✕</span>
           </button>
         </div>
-        {mounted && <HedisChat onBrowseShop={browseShop} />}
+        {mounted &&
+          (mode.kind === "ai" ? (
+            <HedisChat onBrowseShop={browseShop} onFallback={(recipient) => setMode({ kind: "rehber", recipient, switched: true })} />
+          ) : (
+            <HedisRehber onBrowseShop={browseShop} initialRecipient={mode.recipient} switched={mode.switched} />
+          ))}
       </div>
     </dialog>
   );
@@ -106,19 +117,42 @@ export function HedisAutoOpen() {
   return null;
 }
 
-/** Sağ altta duran, Hediş'i yeniden açan küçük maskot düğmesi. */
+/**
+ * Sağ altta duran, Hediş'i yeniden açan maskot düğmesi. Üst menü (içinde Hediş düğmesi var) görünürken
+ * gizlenir ki aynı düğme ekranda iki kez durmasın; sepette ödeme özetinin üstüne binmesin diye hiç çıkmaz.
+ */
 export function HedisLauncher() {
   const open = useHedisDialog((s) => s.open);
   const openHedis = useHedisDialog((s) => s.openHedis);
-  if (open) return null;
+  const pathname = usePathname();
+  const lifted = useStickyBuyBar((s) => s.visible);
+  const [headerGone, setHeaderGone] = useState(false);
+
+  useEffect(() => {
+    const header = document.getElementById("site-ust");
+    if (!header) return;
+    const io = new IntersectionObserver(([entry]) => setHeaderGone(!entry.isIntersecting));
+    io.observe(header);
+    return () => io.disconnect();
+  }, []);
+
+  const visible = !open && headerGone && pathname !== "/sepet";
   return (
     <button
       type="button"
       onClick={openHedis}
-      className="group fixed right-3 bottom-3 z-40 flex items-center gap-2 rounded-full border-2 border-murekkep bg-kagit py-1 pr-4 pl-1 font-bold shadow-baski transition-transform hover:-translate-y-0.5 sm:right-5 sm:bottom-5"
+      aria-label="Hediş, hediye asistanı"
+      inert={!visible}
+      // Gizliyken visibility:hidden (solma bitince devreye girer): odaklanılamaz, ekran okuyucu da görmez
+      className={`group fixed right-3 z-40 flex items-center gap-2 rounded-full border-2 border-murekkep bg-kagit py-1 pr-4 pl-1 shadow-baski transition-[translate,opacity,bottom,visibility] duration-200 hover:-translate-y-0.5 sm:right-5 sm:bottom-5 ${
+        lifted ? "bottom-[5.5rem]" : "bottom-3"
+      } ${visible ? "visible opacity-100" : "invisible translate-y-3 opacity-0"}`}
     >
       <Mascot mood="idle" decorative className="size-11 transition-transform group-hover:-rotate-6" />
-      <span className="text-[0.95rem]">Hediş&apos;e sor</span>
+      <span className="flex flex-col items-start text-left leading-tight">
+        <span className="text-[0.95rem] font-bold">Hediş</span>
+        <span className="text-xs font-semibold text-murekkep-soluk">hediye asistanı</span>
+      </span>
     </button>
   );
 }

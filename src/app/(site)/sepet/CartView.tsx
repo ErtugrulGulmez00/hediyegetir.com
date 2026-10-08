@@ -9,7 +9,7 @@ import { QtyStepper } from "@/components/site/AddToCart";
 import { NotePaper } from "@/components/ui/NotePaper";
 import { Tape } from "@/components/ui/Tape";
 import { formatPrice } from "@/lib/money";
-import { buildCartMessage, cartSubtotal, waLink, type WaLine } from "@/lib/whatsapp";
+import { buildCartMessage, cartSubtotal, MAX_NOTE_LENGTH, waLink, type WaLine } from "@/lib/whatsapp";
 import { useCart, useCartHydrated } from "@/store/cart";
 
 type Fetched = { key: string; products: Map<string, CartProduct>; error: boolean };
@@ -25,7 +25,9 @@ export function CartView({
 }) {
   const hydrated = useCartHydrated();
   const lines = useCart((s) => s.lines);
-  const { setQty, remove, keepOnly } = useCart.getState();
+  const note = useCart((s) => s.note);
+  const giftWrap = useCart((s) => s.giftWrap);
+  const { setQty, remove, keepOnly, setNote, setGiftWrap, clear } = useCart.getState();
   const [fetched, setFetched] = useState<Fetched | null>(null);
   const [droppedNames, setDroppedNames] = useState(0);
 
@@ -107,7 +109,8 @@ export function CartView({
     url: `${siteUrl}/urun/${product.slug}`,
   }));
   const subtotal = cartSubtotal(waLines);
-  const href = whatsappNumber && waLines.length > 0 ? waLink(whatsappNumber, buildCartMessage(greeting, waLines)) : null;
+  const href =
+    whatsappNumber && waLines.length > 0 ? waLink(whatsappNumber, buildCartMessage(greeting, waLines, { note, giftWrap })) : null;
 
   return (
     <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_20rem] lg:items-start">
@@ -159,9 +162,20 @@ export function CartView({
             );
           })}
         </ul>
-        <Link href="/" className="link-el mt-6 inline-block font-semibold">
-          ← Alışverişe devam et
-        </Link>
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+          <Link href="/" className="link-el font-semibold">
+            ← Alışverişe devam et
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm("Sepetindeki tüm ürünler çıkarılsın mı?")) clear();
+            }}
+            className="text-sm text-murekkep-soluk underline-offset-2 hover:text-kiremit-koyu hover:underline"
+          >
+            Sepeti boşalt
+          </button>
+        </div>
       </div>
 
       <aside aria-label="Sipariş özeti" className="kagit relative rotate-[0.6deg] px-5 pt-7 pb-6 lg:sticky lg:top-6">
@@ -173,16 +187,36 @@ export function CartView({
             {formatPrice(subtotal)}
           </dd>
         </dl>
-        <p className="mt-3 text-[0.95rem] text-murekkep-soluk">
-          Ödeme ve kargo detaylarını WhatsApp&apos;tan netleştiriyoruz. Butona basınca sepetin hazır bir mesaj olarak açılır,
-          sen sadece gönderirsin.
-        </p>
+        <div className="mt-4 flex flex-col gap-3">
+          <label className="flex items-center gap-2 font-semibold">
+            <input
+              type="checkbox"
+              className="size-4 accent-kiremit"
+              checked={giftWrap}
+              onChange={(e) => setGiftWrap(e.target.checked)}
+            />
+            Hediye olarak paketlensin
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-semibold">
+            <span>
+              Not ekle <span className="font-normal text-murekkep-soluk">(isteğe bağlı)</span>
+            </span>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={MAX_NOTE_LENGTH}
+              rows={3}
+              placeholder="Renk tercihin, beden ya da pakete eklenecek hediye notu…"
+              className="resize-y rounded-md border-[1.5px] border-kraft-koyu bg-kagit px-3 py-2 text-[0.95rem] font-normal outline-none placeholder:text-murekkep-soluk/80 focus:border-murekkep"
+            />
+          </label>
+        </div>
         {soldOutCount > 0 && (
           <p className="mt-3 text-sm text-kiremit-koyu">{soldOutCount} tükenmiş ürün mesaja eklenmeyecek.</p>
         )}
         {href ? (
           <a href={href} target="_blank" rel="noopener" className="btn btn-whatsapp mt-5 w-full">
-            WhatsApp ile bilgi al
+            Siparişi WhatsApp&apos;tan gönder
           </a>
         ) : (
           <p className="mt-5 text-sm text-kiremit-koyu">
@@ -191,6 +225,13 @@ export function CartView({
               : "WhatsApp hattımız şu an ayarlanıyor; birazdan tekrar dener misin?"}
           </p>
         )}
+        <p className="mt-3 text-[0.95rem] text-murekkep-soluk">
+          Ödeme ve kargoyu orada netleştiriyoruz; şimdi ödeme alınmaz. Butona basınca sepetin hazır bir mesaj olarak açılır,
+          sen sadece gönderirsin.
+        </p>
+        <Link href="/nasil-siparis-verilir" className="link-el mt-2 inline-block text-sm font-semibold">
+          Nasıl sipariş verilir?
+        </Link>
       </aside>
     </div>
   );

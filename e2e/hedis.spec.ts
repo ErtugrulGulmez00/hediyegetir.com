@@ -7,7 +7,7 @@ test.beforeEach(({ page }) => hatadaDus(page));
 const profil = { recipient: "anne", recipientText: "annem", gender: null, budgetMaxKurus: 100_000, occasion: "dogum-gunu", hobbies: [] };
 
 async function sohbetiTaklitEt(page: Page) {
-  const urun = await ornekUrun("handmade-kol-cantasi");
+  const urun = await ornekUrun("kapakli-orgu-omuz-cantasi");
   const istekler: { turns: { role: string; text: string }[] }[] = [];
   await page.route("**/api/hedis/sohbet", async (route) => {
     const body = route.request().postDataJSON();
@@ -56,8 +56,32 @@ test("Hediş penceresi ana sayfada kendiliğinden açılır; yenileyince tekrar 
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: /Kapat/ }).click();
   await expect(dialog).toBeHidden();
-  await page.getByRole("button", { name: "Hediş'e sor" }).last().click();
+
+  // Yüzen düğme üst menü görünürken gizli (aynı düğme iki kez durmasın); aşağı inince çıkar
+  const launcher = page.getByRole("button", { name: "Hediş, hediye asistanı", exact: true });
+  await expect(launcher).toHaveCount(0);
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await launcher.click();
   await expect(dialog).toBeVisible();
+});
+
+test("Yapay zeka çevrim dışıyken Hediş seçeneklerle öneri yapar", async ({ page }) => {
+  await page.route("**/api/hedis/sohbet", (route) => route.fulfill({ status: 503, json: { error: "Hediş şu an çevrim dışı." } }));
+  await page.goto("/");
+  const dialog = page.getByRole("dialog", { name: "Hediş'e sor" });
+  await dialog.getByRole("button", { name: "Anne", exact: true }).click();
+
+  // Seçilen kişi korunur; sıradaki soru bütçe
+  await expect(dialog.getByText("Annene ne kadar ayırmayı düşünüyorsun?")).toBeVisible();
+  await dialog.getByRole("button", { name: "Fark etmez" }).click();
+  await expect(dialog.getByText("Annen nelerden hoşlanır?")).toBeVisible();
+  await dialog.getByRole("button", { name: "Emin değilim" }).click();
+
+  await expect(dialog.getByText("Senin için seçtim", { exact: true })).toBeVisible({ timeout: 10_000 });
+  await dialog.locator("article").first().getByRole("button", { name: "Sepete ekle" }).click();
+  await dialog.getByRole("link", { name: /Sepete git \(1\)/ }).click();
+  await expect(page).toHaveURL(/\/sepet$/);
+  await expect(dialog).toBeHidden();
 });
 
 test("Hediş sohbeti: çip → AI sorusu → hazır cevap → öneri → sepete ekle → WhatsApp", async ({ page }) => {
@@ -88,7 +112,7 @@ test("Hediş sohbeti: çip → AI sorusu → hazır cevap → öneri → sepete 
   await expect(dialog).toBeHidden();
 
   await page.goto("/sepet");
-  const href = (await page.getByRole("link", { name: "WhatsApp ile bilgi al" }).getAttribute("href"))!;
+  const href = (await page.getByRole("link", { name: "Siparişi WhatsApp'tan gönder" }).getAttribute("href"))!;
   expect(decodeURIComponent(href)).toContain(urun.name);
 });
 
@@ -125,7 +149,8 @@ test("sohbet uç noktası geçersiz istekleri reddeder", async ({ request }) => 
   expect(sonAsistan.status()).toBe(400);
 });
 
-test("eski /magaza adresi filtreleriyle birlikte ana sayfaya yönlenir", async ({ page }) => {
+test("eski /magaza ve ?kategori= adresleri kategori sayfasına yönlenir", async ({ page }) => {
   await page.goto("/magaza?kategori=canta");
-  await expect(page).toHaveURL(/\/\?kategori=canta/);
+  await expect(page).toHaveURL(/\/kategori\/canta/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Çanta");
 });

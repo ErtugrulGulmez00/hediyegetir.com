@@ -21,7 +21,7 @@ test("mağazadan ürün seç → sepete ekle → WhatsApp linki ürünü içeriy
 
   await page.getByRole("link", { name: "Sepete git" }).click();
   await expect(page).toHaveURL(/\/sepet$/);
-  const wa = page.getByRole("link", { name: "WhatsApp ile bilgi al" });
+  const wa = page.getByRole("link", { name: "Siparişi WhatsApp'tan gönder" });
   await expect(wa).toBeVisible();
 
   const href = (await wa.getAttribute("href"))!;
@@ -31,12 +31,30 @@ test("mağazadan ürün seç → sepete ekle → WhatsApp linki ürünü içeriy
   expect(text).toContain("2 adet");
   expect(text).toContain("Ara toplam:");
 
-  // Sayfa yenilenince sepet korunuyor
+  // Hediye paketi ve not mesaja eklenir
+  await page.getByLabel("Hediye olarak paketlensin").check();
+  await page.getByLabel(/Not ekle/).fill("Lacivert olsun");
+  const withExtras = decodeURIComponent((await wa.getAttribute("href"))!.split("text=")[1]);
+  expect(withExtras).toContain("Hediye paketi istiyorum.");
+  expect(withExtras).toContain("Not: Lacivert olsun");
+
+  // Sayfa yenilenince sepet (not dahil) korunuyor
   await page.reload();
-  await expect(page.getByRole("link", { name: "WhatsApp ile bilgi al" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Siparişi WhatsApp'tan gönder" })).toBeVisible();
+  await expect(page.getByLabel(/Not ekle/)).toHaveValue("Lacivert olsun");
 
   // Çıkarınca boş sepet görünür
   await page.getByRole("button", { name: /sepetten çıkar/ }).click();
+  await expect(page.getByText("Sepetin şimdilik boş.")).toBeVisible();
+});
+
+test("sepeti boşalt onay ister, onaylanınca her şeyi temizler", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("article").first().locator("h3 a").click();
+  await page.getByRole("button", { name: "Sepete ekle" }).click();
+  await page.goto("/sepet");
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Sepeti boşalt" }).click();
   await expect(page.getByText("Sepetin şimdilik boş.")).toBeVisible();
 });
 

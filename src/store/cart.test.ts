@@ -29,4 +29,23 @@ describe("sepet deposu", () => {
     s.keepOnly(["a"]);
     expect(useCart.getState().lines).toEqual([{ productId: "a", qty: 1 }]);
   });
+
+  it("sepeti boşaltmak notu ve hediye paketini de sıfırlar", () => {
+    const s = useCart.getState();
+    s.add("a");
+    s.setNote("Lacivert olsun");
+    s.setGiftWrap(true);
+    s.clear();
+    const after = useCart.getState();
+    expect([after.lines, after.note, after.giftWrap]).toEqual([[], "", false]);
+  });
+
+  it("eski (sürüm 1) sepetin ürünlerini korur", () => {
+    const migrated = useCart.persist.getOptions().migrate?.({ lines: [{ productId: "a", qty: 2 }] }, 1) as {
+      lines: unknown;
+      note: string;
+      giftWrap: boolean;
+    };
+    expect(migrated).toMatchObject({ lines: [{ productId: "a", qty: 2 }], note: "", giftWrap: false });
+  });
 });

@@ -79,7 +79,7 @@ test.describe("girişli", () => {
   test("fiyat değişikliği ürün sayfasında hemen görünür", async ({ page }) => {
     await login(page);
     await page.goto("/admin/urunler?q=Kol");
-    await page.getByRole("link", { name: "Handmade Kol Çantası" }).click();
+    await page.getByRole("link", { name: "Kapaklı Örgü Omuz Çantası" }).click();
     await page.getByLabel("Satış fiyatı (₺)").waitFor();
     const editUrl = page.url();
     const original = await page.getByLabel("Satış fiyatı (₺)").inputValue();
@@ -95,7 +95,7 @@ test.describe("girişli", () => {
     try {
       // Eski (üstü çizili) fiyat 1.100 ₺; satış fiyatı ondan düşük olmalı
       await save("987");
-      await page.goto("/urun/handmade-kol-cantasi");
+      await page.goto("/urun/kapakli-orgu-omuz-cantasi");
       await expect(page.getByText("₺987").first()).toBeVisible();
     } finally {
       await save(original);

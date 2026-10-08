@@ -11,11 +11,17 @@ export const MAX_QTY = 20;
 
 type CartState = {
   lines: CartLine[];
+  /** WhatsApp mesajına eklenen not: renk, beden, hediye notu */
+  note: string;
+  giftWrap: boolean;
   add: (productId: string, qty?: number) => void;
   setQty: (productId: string, qty: number) => void;
   remove: (productId: string) => void;
   /** Sunucuda artık bulunmayan ürünleri düşürür */
   keepOnly: (productIds: string[]) => void;
+  setNote: (note: string) => void;
+  setGiftWrap: (giftWrap: boolean) => void;
+  /** Sepeti boşaltır (not ve hediye paketi dahil) */
   clear: () => void;
 };
 
@@ -53,6 +59,8 @@ export const useCart = create<CartState>()(
   persist(
     (set) => ({
       lines: [],
+      note: "",
+      giftWrap: false,
       add: (productId, qty = 1) =>
         set((s) => {
           const existing = s.lines.find((l) => l.productId === productId);
@@ -65,11 +73,15 @@ export const useCart = create<CartState>()(
         set((s) => ({ lines: s.lines.map((l) => (l.productId === productId ? { ...l, qty: clamp(qty) } : l)) })),
       remove: (productId) => set((s) => ({ lines: s.lines.filter((l) => l.productId !== productId) })),
       keepOnly: (productIds) => set((s) => ({ lines: s.lines.filter((l) => productIds.includes(l.productId)) })),
-      clear: () => set({ lines: [] }),
+      setNote: (note) => set({ note }),
+      setGiftWrap: (giftWrap) => set({ giftWrap }),
+      clear: () => set({ lines: [], note: "", giftWrap: false }),
     }),
     {
       name: "hg-sepet",
-      version: 1,
+      // 2: not ve hediye paketi eklendi; eski sepetin ürünleri korunur
+      version: 2,
+      migrate: (persisted) => ({ note: "", giftWrap: false, ...(persisted as Partial<CartState>) }) as CartState,
       storage: createJSONStorage(() => safeLocalStorage),
       // Sunucu çıktısıyla uyuşmazlık olmasın diye tarayıcıda elle yüklenir
       skipHydration: true,

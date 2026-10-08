@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { formatPrice } from "@/lib/money";
 import { MAX_QTY, useCart } from "@/store/cart";
+import { useStickyBuyBar } from "@/store/ui";
 
 export function QtyStepper({
   value,
@@ -40,17 +42,49 @@ export function QtyStepper({
   );
 }
 
-export function AddToCart({ productId, soldOut }: { productId: string; soldOut: boolean }) {
+export function AddToCart({
+  productId,
+  soldOut,
+  name,
+  priceKurus,
+}: {
+  productId: string;
+  soldOut: boolean;
+  name: string;
+  priceKurus: number;
+}) {
   const add = useCart((s) => s.add);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const blockRef = useRef<HTMLDivElement>(null);
+  const [scrolledPast, setScrolledPast] = useState(false);
+  const setBarVisible = useStickyBuyBar((s) => s.setVisible);
+
+  // Ana "Sepete ekle" ekranın üstünden çıkınca mobilde alttan yapışkan çubuk açılır
+  useEffect(() => {
+    const el = blockRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setScrolledPast(!e.isIntersecting && e.boundingClientRect.top < 0));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    setBarVisible(scrolledPast);
+    // Sayfa sonu (footer) çubuğun altında kalmasın: globals.css mobilde body'ye bu kadar alt boşluk verir
+    document.documentElement.style.setProperty("--alt-cubuk", scrolledPast ? "5.5rem" : "0px");
+    return () => {
+      setBarVisible(false);
+      document.documentElement.style.removeProperty("--alt-cubuk");
+    };
+  }, [scrolledPast, setBarVisible]);
 
   if (soldOut) {
     return <p className="font-el text-2xl text-kiremit-koyu">Bu ürün şu an tükendi; WhatsApp&apos;tan sorabilirsin.</p>;
   }
 
   return (
-    <div>
+    <div ref={blockRef}>
       <div className="flex flex-wrap items-center gap-3">
         <QtyStepper value={qty} onChange={(n) => setQty(Math.max(1, Math.min(MAX_QTY, n)))} />
         <button
@@ -74,6 +108,33 @@ export function AddToCart({ productId, soldOut }: { productId: string; soldOut: 
           </>
         )}
       </p>
+
+      {scrolledPast && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-murekkep bg-kagit px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{name}</p>
+              <p className="font-baslik text-lg leading-tight font-semibold">{formatPrice(priceKurus)}</p>
+            </div>
+            {added ? (
+              <Link href="/sepet" className="btn btn-ikincil shrink-0">
+                Sepete git →
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-ana shrink-0"
+                onClick={() => {
+                  add(productId, 1);
+                  setAdded(true);
+                }}
+              >
+                Sepete ekle
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

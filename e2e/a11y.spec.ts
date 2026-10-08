@@ -6,7 +6,17 @@ import { hedisGorulmus, ornekUrun } from "./yardim";
 test.use({ reducedMotion: "reduce" });
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
-const PAGES = ["/", "/urun/handmade-kol-cantasi", "/sepet", "/kvkk", "/olmayan-sayfa", "/admin/giris"];
+const PAGES = [
+  "/",
+  "/kategori/canta",
+  "/urun/kapakli-orgu-omuz-cantasi",
+  "/sepet",
+  "/nasil-siparis-verilir",
+  "/hakkimizda",
+  "/kvkk",
+  "/olmayan-sayfa",
+  "/admin/giris",
+];
 
 async function violations(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
@@ -23,7 +33,7 @@ for (const path of PAGES) {
 }
 
 test("Hediş penceresi ve öneri ekranı erişilebilir", async ({ page }) => {
-  const urun = await ornekUrun("handmade-kol-cantasi");
+  const urun = await ornekUrun("kapakli-orgu-omuz-cantasi");
   await page.route("**/api/hedis/sohbet", (route) =>
     route.fulfill({
       json: {

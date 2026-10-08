@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { getAiModel } from "@/lib/ai/analyze";
-import { AiError, aiConfigured, askModel, type ChatMessage } from "@/lib/ai/client";
+import { AiError, aiConfigured, askModel, isPersistentAiError, type ChatMessage } from "@/lib/ai/client";
 import { db } from "@/lib/db";
 import {
   catalogText,
@@ -149,6 +149,8 @@ export async function POST(request: Request): Promise<Response> {
     });
   } catch (e) {
     if (!(e instanceof AiError)) console.error("hedis-sohbet", e);
+    // Anahtar/bakiye sorunu tekrar denemekle düzelmez: istemci seçenekli rehber moda geçsin (503)
+    if (isPersistentAiError(e)) return json({ error: "Hediş şu an çevrim dışı." }, 503);
     return json({ error: "Hediş şu an cevap veremiyor; birazdan tekrar dener misin?" }, 502);
   }
 }

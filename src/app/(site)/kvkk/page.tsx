@@ -55,8 +55,8 @@ export default function KvkkPage() {
               en fazla 90 gün saklanır ve seninle eşleştirilemez.
             </li>
             <li>
-              <strong>WhatsApp ile iletişim:</strong> &quot;WhatsApp ile bilgi al&quot; butonu, sepetindeki ürünleri içeren bir
-              mesaj taslağı açar; mesajı sen gönderirsin. Gönderdiğinde telefon numaran, adın ve yazdıkların siparişini
+              <strong>WhatsApp ile iletişim:</strong> &quot;Siparişi WhatsApp&apos;tan gönder&quot; butonu, sepetindeki ürünleri
+              (ve eklediysen notunu) içeren bir mesaj taslağı açar; mesajı sen gönderirsin. Gönderdiğinde telefon numaran, adın ve yazdıkların siparişini
               görüşmek, ödeme ve kargo sürecini yürütmek amacıyla işlenir (KVKK m.5/2-c: sözleşmenin kurulması ve ifası).
             </li>
             <li>
@@ -100,7 +100,7 @@ export default function KvkkPage() {
         <section>
           <h2>Verilerin aktarımı ve saklanması</h2>
           <p>
-            Site Vercel, veritabanı Neon, görseller Vercel Blob altyapısında barındırılır; bu hizmetlerin sunucuları yurt dışında
+            Site Vercel, veritabanı Supabase, görseller Vercel Blob altyapısında barındırılır; bu hizmetlerin sunucuları yurt dışında
             bulunabilir. Hediş sohbeti OpenAI altyapısında işlenir. WhatsApp yazışmaları WhatsApp (Meta) altyapısı üzerinden
             yürür. Kişisel verileri satmaz, reklam amacıyla
             paylaşmayız.

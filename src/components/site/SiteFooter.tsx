@@ -28,7 +28,9 @@ export async function SiteFooter() {
         <nav aria-label="Alt menü" className="flex flex-col gap-1.5">
           <span className="font-el text-xl text-murekkep">Gezin</span>
           <Link href="/" className="hover:underline">Mağaza</Link>
-          <HedisOpenButton className="text-left hover:underline">Hediş&apos;e sor</HedisOpenButton>
+          <HedisOpenButton className="text-left hover:underline">Hediş · hediye asistanı</HedisOpenButton>
+          <Link href="/nasil-siparis-verilir" className="hover:underline">Nasıl sipariş verilir?</Link>
+          <Link href="/hakkimizda" className="hover:underline">Hikâyemiz</Link>
           <Link href="/sepet" className="hover:underline">Sepet</Link>
         </nav>
         <div className="flex flex-col gap-1.5">

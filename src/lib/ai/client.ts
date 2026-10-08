@@ -23,6 +23,10 @@ function apiKeyFor(provider: AiProvider): string | undefined {
 /** Herhangi bir yapay zeka anahtarı varsa AI özellikleri açılır. */
 export const aiConfigured = () => !!(process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY);
 
+/** Tekrar denemekle düzelmeyecek hata (anahtar yok/geçersiz, bakiye bitti, model yok) */
+export const isPersistentAiError = (e: unknown) =>
+  e instanceof AiError && /anahtar|bakiye|tanımlı değil|bulunamadı/i.test(e.message);
+
 /**
  * OpenAI akıl yürütme modellerinde düşünme süresini kapatır (bu işler için gereksiz, yalnızca yavaşlatır).
  * İlk GPT-5 ailesi "minimal", sonrakiler "none" kabul eder.

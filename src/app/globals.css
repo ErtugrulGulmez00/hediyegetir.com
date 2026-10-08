@@ -71,6 +71,13 @@
     color: var(--color-murekkep);
   }
 
+  /* Mobilde ürün sayfasının alttaki "Sepete ekle" çubuğu açıkken sayfa sonu çubuğun altında kalmasın */
+  @media (width < 40rem) {
+    body {
+      padding-bottom: var(--alt-cubuk, 0px);
+    }
+  }
+
   :focus-visible {
     outline: 2px dashed var(--color-kiremit);
     outline-offset: 3px;

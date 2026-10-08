@@ -40,6 +40,28 @@ describe("buildCartMessage", () => {
     expect(link.startsWith("https://wa.me/905321234567?text=")).toBe(true);
     expect(decodeURIComponent(link.split("text=")[1])).toContain("Kol Çantası");
   });
+
+  it("ek yoksa hediye paketi ve not satırı eklemez", () => {
+    expect(msg).not.toContain("Hediye paketi");
+    expect(msg).not.toContain("Not:");
+  });
+
+  it("hediye paketi ve notu ara toplamın altına ekler", () => {
+    const withExtras = buildCartMessage("Merhaba!", [{ name: "Süveter", qty: 1, unitPriceKurus: 126_000, url: "u" }], {
+      giftWrap: true,
+      note: "  Lacivert olsun, içine \"İyi ki doğdun\" yazılsın.  ",
+    });
+    expect(withExtras).toContain(
+      'Ara toplam: ₺1.260\nHediye paketi istiyorum.\nNot: Lacivert olsun, içine "İyi ki doğdun" yazılsın.\nÖdeme ve kargo',
+    );
+  });
+
+  it("boş notu yok sayar, uzun notu kırpar", () => {
+    const line = [{ name: "Çanta", qty: 1, unitPriceKurus: 1, url: "u" }];
+    expect(buildCartMessage("M", line, { note: "   " })).not.toContain("Not:");
+    const long = buildCartMessage("M", line, { note: "a".repeat(500) });
+    expect(long).toContain(`Not: ${"a".repeat(300)}\n`);
+  });
 });
 
 describe("buildProductQuestion", () => {

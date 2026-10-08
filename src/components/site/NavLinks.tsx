@@ -15,7 +15,7 @@ export function NavLinks() {
       {/* Dar telefonlarda logo + menü + sepet tek satıra sığsın diye kısa etiketler */}
       <button type="button" onClick={openHedis} className={`${item} text-murekkep-soluk hover:text-murekkep`}>
         <span className="sm:hidden">Hediş</span>
-        <span className="hidden sm:inline">Hediş&apos;e sor</span>
+        <span className="hidden sm:inline">Hediş · hediye asistanı</span>
       </button>
       <Link
         href="/"

@@ -5,7 +5,10 @@ import { PrismaClient } from "@/generated/prisma/client";
 function createClient() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL tanımlı değil");
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+  // Yerel `prisma dev` (PGlite) aynı anda çok bağlantıda bağlantı düşürebiliyor; orada .env'de DATABASE_POOL_MAX=1.
+  // Tanımsızsa pg'nin varsayılan havuzu (10) kullanılır.
+  const max = Number(process.env.DATABASE_POOL_MAX) || undefined;
+  return new PrismaClient({ adapter: new PrismaPg({ connectionString, max }) });
 }
 
 // Geliştirmede hot-reload her seferinde yeni bağlantı havuzu açmasın
