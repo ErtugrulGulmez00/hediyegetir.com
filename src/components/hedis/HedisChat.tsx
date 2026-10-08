@@ -279,6 +279,14 @@ export function HedisChat({ onBrowseShop }: { onBrowseShop: () => void }) {
             </button>
           </div>
         </div>
+        {!started && (
+          <p className="mt-2 text-xs text-murekkep-soluk">
+            Yazdıkların öneri için yapay zekayla işlenir; kişisel bilgi (ad, telefon, adres) paylaşma.{" "}
+            <a href="/kvkk" target="_blank" rel="noopener" className="underline underline-offset-2">
+              Ayrıntılar
+            </a>
+          </p>
+        )}
         {started && (
           <div className="mt-2 flex flex-wrap justify-between gap-2 text-sm">
             <button type="button" onClick={restart} className="text-murekkep-soluk underline-offset-2 hover:text-murekkep hover:underline">

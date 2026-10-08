@@ -59,6 +59,12 @@ export default function KvkkPage() {
               mesaj taslağı açar; mesajı sen gönderirsin. Gönderdiğinde telefon numaran, adın ve yazdıkların siparişini
               görüşmek, ödeme ve kargo sürecini yürütmek amacıyla işlenir (KVKK m.5/2-c: sözleşmenin kurulması ve ifası).
             </li>
+            <li>
+              <strong>Hediş (yapay zeka asistanı):</strong> Hediş&apos;e yazdıkların, sana hediye önerebilmek için yapay zeka
+              hizmet sağlayıcımıza (OpenAI) iletilir. Konuşmalar bizim sunucularımızda saklanmaz; kötüye kullanımı önlemek için
+              yalnızca IP adresinin tek yönlü şifrelenmiş hali ve istek zamanı en fazla 2 gün tutulur. Lütfen Hediş&apos;e ad,
+              telefon, adres gibi kişisel bilgiler yazma.
+            </li>
           </ul>
         </section>
 
@@ -95,7 +101,8 @@ export default function KvkkPage() {
           <h2>Verilerin aktarımı ve saklanması</h2>
           <p>
             Site Vercel, veritabanı Neon, görseller Vercel Blob altyapısında barındırılır; bu hizmetlerin sunucuları yurt dışında
-            bulunabilir. WhatsApp yazışmaları WhatsApp (Meta) altyapısı üzerinden yürür. Kişisel verileri satmaz, reklam amacıyla
+            bulunabilir. Hediş sohbeti OpenAI altyapısında işlenir. WhatsApp yazışmaları WhatsApp (Meta) altyapısı üzerinden
+            yürür. Kişisel verileri satmaz, reklam amacıyla
             paylaşmayız.
           </p>
         </section>
