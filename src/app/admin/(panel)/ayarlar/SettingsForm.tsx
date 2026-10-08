@@ -23,22 +23,25 @@ export function SettingsForm({
       <Field label="Instagram adresi" hint="Boş bırakırsan sitede gösterilmez.">
         <input name="instagramUrl" defaultValue={initial.instagramUrl} placeholder="https://instagram.com/hesabin" className={inputClass} />
       </Field>
-      <Field
-        label="Yapay zeka modeli"
-        hint={
-          aiEnabled ? (
-            <>
-              Ürün fotoğrafından öneri üreten model; görüntü destekli olmalı. Varsayılan gpt-6-luna (OpenAI, ≈3 sn,
-              fotoğraf başına ≈0,00015 $). Adında &quot;/&quot; olan modeller OpenRouter üzerinden çağrılır (ör.
-              google/gemma-4-31b-it:free).
-            </>
-          ) : (
-            "OPENAI_API_KEY ya da OPENROUTER_API_KEY tanımlı olmadığı için bu özellik kapalı."
-          )
-        }
-      >
-        <input name="aiModel" defaultValue={initial.aiModel} spellCheck={false} className={`${inputClass} font-mono text-sm`} />
-      </Field>
+      {/* Geliştirici ayarı: site sahibinin önüne çıkmasın diye kapalı durur, yapay zeka anahtarı yoksa hiç görünmez */}
+      {aiEnabled && (
+        <details className="text-sm">
+          <summary className="cursor-pointer font-semibold text-murekkep-soluk hover:text-murekkep">Gelişmiş: yapay zeka modeli</summary>
+          <Field
+            label="Yapay zeka modeli"
+            className="mt-3"
+            hint={
+              <>
+                Ürün fotoğrafından öneri üreten model; görüntü destekli olmalı. Varsayılan gpt-6-luna (OpenAI, ≈3 sn,
+                fotoğraf başına ≈0,00015 $). Adında &quot;/&quot; olan modeller OpenRouter üzerinden çağrılır (ör.
+                google/gemma-4-31b-it:free).
+              </>
+            }
+          >
+            <input name="aiModel" defaultValue={initial.aiModel} spellCheck={false} className={`${inputClass} font-mono text-sm`} />
+          </Field>
+        </details>
+      )}
       {state.error && <p role="alert" className="font-semibold text-kiremit-koyu">{state.error}</p>}
       {state.ok && <p role="status" className="font-semibold text-zeytin">Kaydedildi.</p>}
       <button type="submit" className="btn btn-ana self-start" disabled={pending}>

@@ -270,7 +270,9 @@ const SettingsInput = z.object({
     .trim()
     .transform((m) => m || DEFAULT_AI_MODEL)
     // OpenAI: "gpt-6-luna"; OpenRouter: "saglayici/model-adi"
-    .refine((m) => /^~?[\w.-]+(\/[\w.:-]+)?$/.test(m), "Geçersiz model adı (ör. gpt-6-luna ya da saglayici/model-adi)"),
+    .refine((m) => /^~?[\w.-]+(\/[\w.:-]+)?$/.test(m), "Geçersiz model adı (ör. gpt-6-luna ya da saglayici/model-adi)")
+    // Yapay zeka kapalıyken alan formda yok; o zaman kayıtlı model olduğu gibi kalır
+    .optional(),
 });
 
 export async function saveSettingsAction(_prev: SettingsState, formData: FormData): Promise<SettingsState> {

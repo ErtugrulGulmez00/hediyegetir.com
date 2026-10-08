@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { Logo } from "@/components/ui/Logo";
 import { logoutAction } from "../actions";
@@ -12,6 +13,17 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
         <div className="flex items-center justify-between gap-3 px-4 py-4 md:block md:px-5 md:py-6">
           <Logo />
           <p className="hidden font-el text-lg text-murekkep-soluk md:mt-1 md:block">yönetim masası</p>
+          {/* Mobilde menü satırı dört bağlantıyla dolu; siteye dönüş ve çıkış burada hep görünür */}
+          <div className="flex shrink-0 items-center gap-1 text-sm text-murekkep-soluk md:hidden">
+            <Link href="/" className="rounded-sm px-2 py-2 whitespace-nowrap hover:bg-kraft/50">
+              Siteyi aç ↗
+            </Link>
+            <form action={logoutAction}>
+              <button type="submit" className="rounded-sm px-2 py-2 hover:bg-kraft/50 hover:text-kiremit-koyu">
+                Çıkış
+              </button>
+            </form>
+          </div>
         </div>
         <Suspense fallback={<AdminNavView pathname={null} />}>
           <AdminNav />

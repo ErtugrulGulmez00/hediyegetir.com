@@ -228,7 +228,6 @@ export function PhotoUploader({
             </ul>
             <p className="mt-3 text-xs text-murekkep-soluk">
               Sürükleyerek sırala · yeni fotoğrafları bu alana bırakabilirsin
-              {!blobEnabled && " · yerel mod: dosyalar public/uploads klasörüne kaydedilir"}
             </p>
           </>
         )}

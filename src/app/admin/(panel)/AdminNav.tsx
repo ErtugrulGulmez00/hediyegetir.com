@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { logoutAction } from "../actions";
 
 const LINKS = [
   { href: "/admin", label: "Özet" },
@@ -19,7 +18,7 @@ export function AdminNav() {
 /** pathname null ise hiçbir bağlantı aktif görünmez (Suspense yedeği). */
 export function AdminNavView({ pathname }: { pathname: string | null }) {
   return (
-    <nav aria-label="Yönetim menüsü" className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:px-3 md:pb-0">
+    <nav aria-label="Yönetim menüsü" className="flex gap-0.5 overflow-x-auto px-2 pb-3 sm:gap-1 sm:px-3 md:flex-col md:pb-0">
       {LINKS.map((l) => {
         const active = pathname != null && (l.href === "/admin" ? pathname === "/admin" : pathname.startsWith(l.href));
         return (
@@ -27,7 +26,7 @@ export function AdminNavView({ pathname }: { pathname: string | null }) {
             key={l.href}
             href={l.href}
             aria-current={active ? "page" : undefined}
-            className={`shrink-0 rounded-sm px-3 py-2 text-[0.95rem] font-semibold whitespace-nowrap ${
+            className={`shrink-0 rounded-sm px-2.5 py-2 text-[0.95rem] font-semibold whitespace-nowrap sm:px-3 ${
               active ? "bg-murekkep text-kagit" : "hover:bg-kraft/50"
             }`}
           >
@@ -35,14 +34,13 @@ export function AdminNavView({ pathname }: { pathname: string | null }) {
           </Link>
         );
       })}
-      <Link href="/" className="shrink-0 rounded-sm px-3 py-2 text-[0.95rem] whitespace-nowrap text-murekkep-soluk hover:bg-kraft/50">
+      {/* Mobilde menü satırına sığmadığı için logonun yanında durur (layout.tsx) */}
+      <Link
+        href="/"
+        className="hidden shrink-0 rounded-sm px-3 py-2 text-[0.95rem] whitespace-nowrap text-murekkep-soluk hover:bg-kraft/50 md:block"
+      >
         Siteyi aç ↗
       </Link>
-      <form action={logoutAction} className="shrink-0 md:hidden">
-        <button type="submit" className="rounded-sm px-3 py-2 text-[0.95rem] whitespace-nowrap text-murekkep-soluk">
-          Çıkış
-        </button>
-      </form>
     </nav>
   );
 }
