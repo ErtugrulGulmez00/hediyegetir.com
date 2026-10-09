@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { HedisOpenButton } from "@/components/hedis/HedisDialog";
 import { SiteShell } from "@/components/site/SiteShell";
-import { GiftIcon } from "@/components/ui/Logo";
+import { Mascot } from "@/components/hedis/Mascot";
 import { NotePaper } from "@/components/ui/NotePaper";
 
 export const metadata: Metadata = { title: "Sayfa bulunamadı" };
@@ -13,7 +13,8 @@ export default function NotFound() {
     <SiteShell>
       <div className="sayfa pt-6">
         <div className="mx-auto mt-6 grid max-w-3xl items-center gap-10 sm:mt-10 sm:grid-cols-[auto_1fr]">
-          <GiftIcon className="size-32 -rotate-12 opacity-80" />
+          {/* Hediş düşünüyor: sayfayı bulamadı */}
+          <Mascot mood="thinking" decorative rich className="mx-auto size-36" />
           <NotePaper lined tilt={0.8}>
             <p className="font-el text-xl text-kiremit-koyu">404 · iade edildi</p>
             <h1 className="mt-1 text-3xl">Bu paket adrese ulaşamadı.</h1>

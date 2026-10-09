@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { HedisOpenButton } from "@/components/hedis/HedisDialog";
 import { AtolyeVideo } from "@/components/site/AtolyeVideo";
-import { GiftIcon } from "@/components/ui/Logo";
+import { Mascot } from "@/components/hedis/Mascot";
 import { NotePaper } from "@/components/ui/NotePaper";
 import { Scribble } from "@/components/ui/Scribble";
 import { Stamp } from "@/components/ui/Stamp";
@@ -92,7 +92,7 @@ export default function AboutPage() {
           </div>
 
           <aside aria-hidden className="hidden flex-col items-center gap-6 pt-6 lg:flex">
-            <GiftIcon className="size-32 -rotate-6 opacity-90" />
+            <Mascot decorative rich className="size-36" />
             <Stamp>kadın emeği</Stamp>
             <Stamp rotate={8}>El yapımı</Stamp>
           </aside>

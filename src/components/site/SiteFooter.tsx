@@ -2,7 +2,7 @@ import { cacheLife } from "next/cache";
 import Link from "next/link";
 import { getSettings } from "@/lib/catalog";
 import { HedisOpenButton } from "@/components/hedis/HedisDialog";
-import { GiftIcon } from "@/components/ui/Logo";
+import { Mascot } from "@/components/hedis/Mascot";
 
 export async function SiteFooter() {
   const settings = await getSettings();
@@ -18,7 +18,7 @@ export async function SiteFooter() {
       <div className="sayfa grid gap-8 pt-10 pb-8 sm:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <p className="flex items-center gap-2 font-baslik text-xl font-semibold">
-            <GiftIcon className="size-7" /> hediyegetir
+            <Mascot decorative className="size-8" /> hediyegetir
           </p>
           <p className="mt-2 max-w-sm text-[0.95rem] text-murekkep">
             Sevdiklerin için özenle seçilmiş hediyeler. Online ödeme yok; siparişini WhatsApp&apos;tan birlikte
