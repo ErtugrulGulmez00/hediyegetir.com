@@ -53,3 +53,8 @@ next-env.d.ts
 
 # yerel admin yüklemeleri (Blob anahtarı yokken)
 /public/uploads
+
+# Hediş robotunun kaynak paketi (siteye public/hedis + Mascot.tsx olarak uyarlandı)
+/animasyonvekarakter
+# Proje içine klonlanmış boş yayın reposu
+/hediyegetir

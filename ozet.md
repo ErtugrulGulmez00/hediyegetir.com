@@ -24,7 +24,7 @@ Bu dosya, siteyi geliştirirken yaptığımız konuşmaların ve alınan kararla
 - **Değişmeyecek kararlar:**
   - Hediş'in ana sayfada **tam ekran kendiliğinden açılması bilinçli**. Sorun olarak gösterme, değiştirme.
   - Ürün sayısının azlığından ya da çeşitsizliğinden doğan sorunlar konu dışı; ürünler zamanla eklenecek.
-  - Tasarım sıcak paletle (kraft, krem, kiremit, hardal, zeytin) kalacak. "AI" efektleri için mor-mavi gradyan kullanılmıyor.
+  - Tasarım sıcak paletle (kraft, krem, kiremit, hardal, zeytin) kalacak. "AI" efektleri için mor-mavi gradyan kullanılmıyor (istisna: Hediş robotunun kendi mor/turkuaz renkleri, kullanıcının kararı).
 - **Gizli bilgiler:**
   - Supabase şifresi, admin şifresi ve OpenAI anahtarı **yalnızca `.env`'de** duruyor; `.env` git'e girmiyor.
   - Bunları hiçbir dosyaya, commit'e ya da bu özete yazma.
@@ -277,6 +277,9 @@ Bu dosya, siteyi geliştirirken yaptığımız konuşmaların ve alınan kararla
 27. **Hediş en fazla 2 soru:** İlk öneriden önce en fazla 2 soru (`MAX_QUESTIONS`). Talimatta yazıyor; ayrıca sunucu sayıyor (`mustRecommend`): sınır dolduysa modele "artık öner" uyarısı gidiyor, yine ürün seçmezse kural tabanlı motor öneriyor (kişi bilinmiyorsa "diğer"). Öneriden sonra serbest sohbet.
 28. **Hediş alt düğmeleri:** "Sepete git (N)" (hardal) ve "Diğer ürünlere göz at" (zeytin) yan yana büyük düğmeler; "Baştan başla" altta küçük.
 29. **Yayın kararı (9 Ekim):** Vercel'de, **alan adı şimdilik alınmıyor**; site `*.vercel.app` adresinde yayınlanacak. Adres yalnızca `NEXT_PUBLIC_SITE_URL`'den geliyor; kodda sabit "hediyegetir.com" metinleri marka adına ("hediyegetir") çevrildi, WhatsApp karşılama cümlesi de (`20261009090000_karsilama_alan_adsiz`). Fotoğrafları Blob'a taşımak için `npm run foto-blob` yazıldı (14 fotoğraf, ~1,5 MB).
+30. **Vercel'e geçiş (9 Ekim):** Yayın reposu `umitcan246/hediyegetir` (yerelde `vercel` adlı uzak depo; `origin` Ertuğrul'un reposu, ikisine de gönderilmeli). Blob deposu **Public** olmalı (ilk açılan Private depo yükleme kabul etmedi, silindi). `npm run foto-blob` ile 14 fotoğrafın hepsi Blob'a taşındı; veritabanında `/uploads/` adresi kalmadı. Blob anahtarı yerel `.env`'de de var, yerelde yüklenen fotoğraflar da Blob'a gidiyor.
+31. **Deneme ürünleri (9 Ekim):** Test için `npm run deneme-urunler` ile 14 ürün eklendi (Çanta 5, Giyim 5, Ayakkabı 4). Adresleri `deneme-` ile başlıyor, görselleri `npm run deneme-fotograf` ile yapay zekayla üretildi (gpt-image-1-mini, 24 görsel, Blob'da; ilk çekim önden, sonrakiler kullanımda / yakın çekim); el yapımı/hazır, indirimli, tükenmiş (Makrome Bel Çantası), stoklu ve sipariş üzerine karışık; Tek/İkili/Üçlü düzenler ve çoklu damga var. Gerçek ürünlerin altında kalsınlar diye oluşturulma tarihleri eski. **Yayından önce sil:** `npm run deneme-urunler -- --sil`.
+32. **Hediş'in yeni görünümü (9 Ekim):** Kutu maskotu yerine elinde hediye kutusu tutan robot (kullanıcının getirdiği `animasyonvekarakter/` paketinden). Görseller `public/hedis/{idle,wink,thinking,celebrate}.webp` (512 px, ~30 KB). `Mascot.tsx` aynı props'la: normal/konuşurken gülümser ve 3,5–6,5 sn'de bir göz kırpar, düşünürken halka + tarama ışığı, öneri bulunca zıplama + kalpler; süzülme ve ışıma CSS'te (`globals.css` → `.hedis-robot*`). Karşılamadaki büyük robot `rich` modunda (demo sayfasındaki gibi): mor→beyaz→mavi parlak çerçeve, antende yanıp sönen turkuaz ışık, sağ altta durum rozeti (✨ / 😉 / dönen ⚙️ / 🎁), fareyle 3B eğilme. Ses ve canvas parçacıkları bilerek alınmadı. Robot mor/turkuaz; "mor-mavi yok" kuralının istisnası, kullanıcının kararı. Kaynak klasör git ve lint dışında.
 
 ---
 
@@ -368,4 +371,5 @@ Başka bir bilgisayarda devam edeceksen bu ikisini de taşıman gerekir.
 - **Git Bash yolları:** `/` ile başlayan argümanları Windows yoluna çeviriyor (ör. `/videos/...`). Gerekirse komutun başına `MSYS_NO_PATHCONV=1` ekle.
 - **Takılı dev sunucusu:** "Another next dev server is already running" hatası çıkarsa, komut satırında `hediyegetir.com-main\node_modules` ve `next` geçen eski süreçleri kapat.
 - **Şema değişikliği:** Prisma şeması değiştikten sonra dev sunucusunu yeniden başlat; eski veritabanı istemcisi bellekte kalıyor.
+- **`globals.css` değişikliği:** Dev sunucusu bu dosyadaki değişiklikleri canlı almıyor (Turbopack + Tailwind yükleyicisi); eski CSS'i sunmaya devam ediyor. CSS değiştirince dev sunucusunu yeniden başlat. Üretim derlemesinde sorun yok.
 - **npm gürültüsü:** `npm install` bazen `package-lock.json`'da yalnızca npm sürümünden kaynaklanan değişiklik bırakıyor. Gerçek bir paket değişikliği yoksa `git checkout package-lock.json` ile geri al.

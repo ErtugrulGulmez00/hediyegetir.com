@@ -75,7 +75,7 @@ function Doodles() {
   );
 }
 
-/** Karşılama: ortada sallanan maskot, adı ve maskottan çıkan konuşma balonu */
+/** Karşılama: ortada süzülen Hediş robotu, adı ve robottan çıkan konuşma balonu */
 export function HedisWelcome({
   mood,
   bumpKey,
@@ -89,19 +89,7 @@ export function HedisWelcome({
 }) {
   return (
     <div className="flex flex-col items-center pt-2 text-center">
-      <div className="relative">
-        <span aria-hidden className="absolute inset-x-0 top-5 mx-auto size-28 rounded-full bg-hardal/45 sm:size-32" />
-        <Doodles />
-        <span className="relative inline-block animate-sallan">
-          <Mascot mood={mood} bumpKey={bumpKey} className="size-28 sm:size-32" />
-        </span>
-      </div>
-      <p data-yuzey className="font-baslik text-3xl leading-tight text-kagit drop-shadow-sm">
-        Hediş
-      </p>
-      <p data-yuzey className="mt-1">
-        <AssistantBadge ai={ai} />
-      </p>
+      <HedisHero mood={mood} bumpKey={bumpKey} ai={ai} />
       <div data-yuzey className="relative mt-5 max-w-lg rounded-2xl border-2 border-murekkep bg-kagit px-5 py-4 text-[1.05rem] shadow-baski-sm">
         <span aria-hidden className="absolute -top-[9px] left-1/2 size-4 -translate-x-1/2 rotate-45 border-t-2 border-l-2 border-murekkep bg-kagit" />
         <span className="sr-only">Hediş: </span>
@@ -111,15 +99,31 @@ export function HedisWelcome({
   );
 }
 
-/** Sohbet başladıktan sonraki küçük başlık */
+/** Büyük robot (süsleriyle), adı ve rozeti: karşılamada ve sohbet boyunca aynı boyutta */
+function HedisHero({ mood, bumpKey, ai }: { mood: MascotMood; bumpKey: number; ai: boolean }) {
+  return (
+    <>
+      <div className="relative">
+        <Doodles />
+        <span className="relative inline-block">
+          <Mascot mood={mood} bumpKey={bumpKey} rich className="size-36 sm:size-[10.5rem]" />
+        </span>
+      </div>
+      <p data-yuzey className="font-baslik text-3xl leading-tight text-kagit drop-shadow-sm">
+        Hediş
+      </p>
+      <p data-yuzey className="mt-1">
+        <AssistantBadge ai={ai} />
+      </p>
+    </>
+  );
+}
+
+/** Sohbet başladıktan sonraki başlık: robot küçülmez, karşılamadaki gibi büyük kalır */
 export function HedisHeader({ mood, bumpKey, ai }: { mood: MascotMood; bumpKey: number; ai: boolean }) {
   return (
-    <div className="flex items-center justify-center gap-3">
-      <Mascot mood={mood} bumpKey={bumpKey} className="size-14 shrink-0" />
-      <div data-yuzey className="text-left">
-        <p className="font-baslik text-2xl leading-tight text-kagit">Hediş</p>
-        <AssistantBadge ai={ai} />
-      </div>
+    <div className="flex flex-col items-center pt-2 text-center">
+      <HedisHero mood={mood} bumpKey={bumpKey} ai={ai} />
     </div>
   );
 }

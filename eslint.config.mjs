@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Hediş robotunun kaynak paketi (siteye Mascot.tsx olarak uyarlandı)
+    "animasyonvekarakter/**",
+    // Proje içine klonlanmış boş yayın reposu
+    "hediyegetir/**",
   ]),
 ]);
 

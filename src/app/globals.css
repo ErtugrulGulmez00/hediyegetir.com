@@ -263,19 +263,219 @@
   animation: pencere-gel 260ms ease-out;
 }
 
-/* Hediş'in göz kırpması */
-@keyframes goz-kirp {
+/* Hediş robotu (Mascot.tsx): süzülme, ışıma, düşünürken halka ve tarama, sevinçte zıplama ve kalpler */
+.hedis-robot {
+  isolation: isolate;
+}
+.hedis-robot-aura {
+  position: absolute;
+  inset: -12%;
+  z-index: -1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgb(155 114 207 / 0.42) 0%, rgb(34 211 238 / 0.2) 45%, transparent 70%);
+  animation: hedis-aura 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+.hedis-robot[data-durum="thinking"] .hedis-robot-aura {
+  background: radial-gradient(circle, rgb(34 211 238 / 0.6) 0%, rgb(155 114 207 / 0.35) 55%, transparent 75%);
+  animation-duration: 1.4s;
+}
+.hedis-robot[data-durum="happy"] .hedis-robot-aura {
+  background: radial-gradient(circle, rgb(251 191 36 / 0.55) 0%, rgb(244 114 182 / 0.4) 40%, transparent 75%);
+  animation-duration: 1s;
+}
+/* Parlak çerçeve: mor → beyaz → mavi geçişli halka, mor gölge ve turkuaz ışıma */
+.hedis-robot-govde {
+  position: absolute;
+  inset: 0;
+  padding: 3%;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #bfa0ec 0%, #ffffff 50%, #89cff0 100%);
+  box-shadow:
+    0 12px 30px -10px rgb(138 92 197 / 0.5),
+    0 0 18px rgb(34 211 238 / 0.3),
+    inset 0 2px 4px rgb(255 255 255 / 0.9);
+  animation: hedis-suzul 4.2s ease-in-out infinite;
+}
+.hedis-robot:hover .hedis-robot-govde {
+  box-shadow:
+    0 16px 36px -8px rgb(138 92 197 / 0.6),
+    0 0 26px rgb(34 211 238 / 0.55),
+    inset 0 2px 4px rgb(255 255 255 / 0.9);
+}
+.hedis-robot[data-durum="happy"] .hedis-robot-govde {
+  animation: hedis-zipla 1.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+}
+.hedis-robot-konus {
+  animation: hedis-konus 0.55s ease-out;
+}
+.hedis-robot-halka {
+  position: absolute;
+  inset: -7%;
+  border: 2px dashed rgb(34 211 238 / 0.75);
+  border-radius: 9999px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.hedis-robot[data-durum="thinking"] .hedis-robot-halka {
+  opacity: 1;
+  animation: hedis-don 4s linear infinite;
+}
+.hedis-robot-tarama {
+  position: absolute;
+  inset-inline: 0;
+  top: -50%;
+  height: 45%;
+  background: linear-gradient(180deg, transparent, rgb(34 211 238 / 0.35), rgb(255 255 255 / 0.5), transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+.hedis-robot[data-durum="thinking"] .hedis-robot-tarama {
+  opacity: 1;
+  animation: hedis-tara 1.6s ease-in-out infinite;
+}
+.hedis-robot-kalp {
+  opacity: 0;
+  animation: hedis-kalp 1.6s ease-out infinite;
+}
+/* Antendeki kalpte yanıp sönen turkuaz ışık (yalnızca büyük robot) */
+.hedis-robot-anten {
+  position: absolute;
+  top: 3%;
+  right: 24%;
+  width: 12%;
+  height: 12%;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #22d3ee 0%, rgb(34 211 238 / 0) 70%);
+  opacity: 0.8;
+  animation: hedis-anten 2s ease-in-out infinite;
+  pointer-events: none;
+}
+.hedis-robot[data-durum="thinking"] .hedis-robot-anten {
+  animation-duration: 0.8s;
+  opacity: 1;
+}
+/* Sağ altta durum rozeti: ✨ / 😉 / dönen ⚙️ / zıplayan 🎁 */
+.hedis-robot-rozet {
+  position: absolute;
+  right: 4%;
+  bottom: 2%;
+  display: flex;
+  width: 17%;
+  height: 17%;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #9b72cf;
+  border-radius: 9999px;
+  background: #ffffff;
+  font-size: 0.8rem;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.15);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hedis-robot[data-durum="thinking"] .hedis-robot-rozet {
+  border-color: #22d3ee;
+  background: #ecfeff;
+  animation: hedis-don 2s linear infinite;
+}
+.hedis-robot[data-durum="happy"] .hedis-robot-rozet {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  animation: hedis-rozet 0.6s ease infinite alternate;
+}
+
+@keyframes hedis-suzul {
   0%,
-  93%,
   100% {
-    transform: scaleY(1);
+    transform: translateY(0) rotate(0deg);
   }
-  96% {
-    transform: scaleY(0.1);
+  30% {
+    transform: translateY(-6%) rotate(1.2deg);
+  }
+  65% {
+    transform: translateY(-2%) rotate(-1.4deg);
   }
 }
-.hedis-goz {
-  animation: goz-kirp 4.2s infinite;
+@keyframes hedis-zipla {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(-9%) scale(1.05) rotate(2deg);
+  }
+  60% {
+    transform: translateY(-3%) scale(1.02) rotate(-2deg);
+  }
+}
+@keyframes hedis-konus {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-6%);
+  }
+  70% {
+    transform: translateY(-2%);
+  }
+}
+@keyframes hedis-aura {
+  0%,
+  100% {
+    transform: scale(0.97);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+@keyframes hedis-anten {
+  0%,
+  100% {
+    transform: scale(0.85);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 1;
+  }
+}
+@keyframes hedis-rozet {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1.22);
+  }
+}
+@keyframes hedis-don {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hedis-tara {
+  0% {
+    top: -50%;
+  }
+  100% {
+    top: 110%;
+  }
+}
+@keyframes hedis-kalp {
+  0% {
+    opacity: 0;
+    transform: translateY(20%) scale(0.6);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-160%) scale(1.1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

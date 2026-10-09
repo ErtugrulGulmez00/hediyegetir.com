@@ -20,7 +20,9 @@
     "db:studio": "prisma studio",
     "hash-password": "tsx scripts/hash-password.ts",
     "urun-aktar": "tsx scripts/urun-aktar.ts",
-    "foto-blob": "tsx scripts/foto-blob.ts"
+    "foto-blob": "tsx scripts/foto-blob.ts",
+    "deneme-urunler": "tsx scripts/deneme-urunler.ts",
+    "deneme-fotograf": "tsx scripts/deneme-fotograf.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

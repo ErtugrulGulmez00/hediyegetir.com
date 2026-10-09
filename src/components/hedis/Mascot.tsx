@@ -1,114 +1,130 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import Image from "next/image";
+import { useReducedMotion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 
 export type MascotMood = "idle" | "talking" | "thinking" | "happy";
 
-/** Hediş: yüzü olan, kapağı açılıp kapanan bir hediye kutusu. */
+/** Robotun dört karesi (public/hedis): aralarında yumuşak geçişle değişir */
+const FACES = ["idle", "wink", "thinking", "celebrate"] as const;
+type Face = (typeof FACES)[number];
+
+/** Zengin modda sağ alttaki durum rozeti */
+const BADGE: Record<Face, string> = { idle: "✨", wink: "😉", thinking: "⚙️", celebrate: "🎁" };
+
+/**
+ * Hediş: elinde hediye kutusu tutan sevimli robot. Parlak çerçeveli dairede havada süzülür, ara ara göz kırpar;
+ * düşünürken etrafında halka döner ve üstünden tarama ışığı geçer; öneri bulunca kutuyu açıp zıplar, kalpler uçuşur.
+ * `rich` (büyük karşılama robotu): anten ışığı, durum rozeti ve fareyle 3B eğilme de eklenir.
+ * Hareket azaltma tercihinde yalnızca kare değişir.
+ */
 export function Mascot({
   mood = "idle",
   className = "",
   bumpKey,
   decorative = false,
+  rich = false,
 }: {
   mood?: MascotMood;
   className?: string;
+  /** Değişince robot küçük bir "konuşma" sıçraması yapar (yeni mesaj) */
   bumpKey?: string | number;
   /** Yanında zaten "Hediş" yazıyorsa ekran okuyucuya ikinci kez okunmasın */
   decorative?: boolean;
+  /** Büyük gösterim: anten ışığı, durum rozeti, fareyle eğilme */
+  rich?: boolean;
 }) {
   const reduce = useReducedMotion();
+  const tiltRef = useRef<HTMLSpanElement>(null);
+  // İlk görünüşte göz kırparak karşılar
+  const [blink, setBlink] = useState(true);
 
-  const lid = reduce
-    ? { rotate: mood === "happy" ? -24 : 0, y: mood === "happy" ? -8 : 0 }
-    : mood === "thinking"
-      ? { rotate: [0, -10, 0, -6, 0], y: [0, -9, 0, -5, 0] }
-      : mood === "happy"
-        ? { rotate: -26, y: -10, x: -3 }
-        : { rotate: 0, y: 0, x: 0 };
+  useEffect(() => {
+    const id = setTimeout(() => setBlink(false), 1400);
+    return () => clearTimeout(id);
+  }, []);
 
-  const lidTransition =
-    mood === "thinking" && !reduce
-      ? { duration: 1.1, repeat: Infinity, ease: "easeInOut" as const }
-      : { type: "spring" as const, stiffness: 260, damping: 14 };
+  // Doğal göz kırpma: normal hâldeyken 3,5–6,5 saniyede bir
+  useEffect(() => {
+    if (reduce || mood === "thinking" || mood === "happy") return;
+    let timer: ReturnType<typeof setTimeout>;
+    const next = () => {
+      timer = setTimeout(() => {
+        setBlink(true);
+        timer = setTimeout(() => {
+          setBlink(false);
+          next();
+        }, 380);
+      }, 3500 + Math.random() * 3000);
+    };
+    next();
+    return () => clearTimeout(timer);
+  }, [mood, reduce]);
+
+  const face: Face = mood === "thinking" ? "thinking" : mood === "happy" ? "celebrate" : blink ? "wink" : "idle";
+  const tilt = rich && !reduce;
 
   return (
-    <motion.svg
-      key={reduce ? undefined : bumpKey}
-      viewBox="0 0 120 120"
-      className={className}
+    <span
       role={decorative ? undefined : "img"}
-      aria-label={decorative ? undefined : "Hediş, hediye kutusu maskotu"}
+      aria-label={decorative ? undefined : "Hediş, hediye asistanı robot"}
       aria-hidden={decorative || undefined}
-      initial={reduce || mood !== "talking" ? false : { y: 0 }}
-      animate={reduce || mood !== "talking" ? undefined : { y: [0, -6, 0, -2, 0] }}
-      transition={{ duration: 0.55, ease: "easeOut" }}
+      data-durum={mood}
+      className={`hedis-robot relative inline-block shrink-0 ${className}`}
+      // Fareyle üstüne gelince robot imlecin yönüne hafifçe döner (yeniden çizim olmadan)
+      onMouseMove={
+        tilt
+          ? (e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              const x = (e.clientX - r.left) / r.width - 0.5;
+              const y = (e.clientY - r.top) / r.height - 0.5;
+              if (tiltRef.current) tiltRef.current.style.transform = `perspective(800px) rotateX(${(-y * 20).toFixed(1)}deg) rotateY(${(x * 20).toFixed(1)}deg) scale(1.04)`;
+            }
+          : undefined
+      }
+      onMouseLeave={tilt ? () => tiltRef.current && (tiltRef.current.style.transform = "") : undefined}
     >
-      {/* gölge */}
-      <ellipse cx="60" cy="112" rx="38" ry="4.5" fill="var(--color-murekkep)" opacity=".12" />
-
-      {/* gövde */}
-      <rect x="22" y="54" width="76" height="54" rx="3" fill="var(--color-kraft)" stroke="var(--color-murekkep)" strokeWidth="3" />
-      <rect x="55" y="54" width="10" height="54" fill="var(--color-kiremit)" />
-      <path d="M55 54v54M65 54v54" stroke="var(--color-murekkep)" strokeWidth="1.5" opacity=".35" />
-
-      {/* yanaklar */}
-      <circle cx="35" cy="89" r="5" fill="var(--color-gul)" opacity=".55" />
-      <circle cx="85" cy="89" r="5" fill="var(--color-gul)" opacity=".55" />
-
-      {/* gözler */}
-      {mood === "happy" ? (
-        <g stroke="var(--color-murekkep)" strokeWidth="3" strokeLinecap="round" fill="none">
-          <path d="M36 80q5-6 10 0" />
-          <path d="M74 80q5-6 10 0" />
-        </g>
-      ) : (
-        <g className={reduce ? undefined : "hedis-goz"} style={{ transformOrigin: "60px 79px", transformBox: "view-box" }}>
-          <ellipse cx="41" cy={mood === "thinking" ? 76 : 79} rx="3.6" ry="4.6" fill="var(--color-murekkep)" />
-          <ellipse cx="79" cy={mood === "thinking" ? 76 : 79} rx="3.6" ry="4.6" fill="var(--color-murekkep)" />
-          <circle cx="42.3" cy={mood === "thinking" ? 74.4 : 77.4} r="1.2" fill="var(--color-kagit)" />
-          <circle cx="80.3" cy={mood === "thinking" ? 74.4 : 77.4} r="1.2" fill="var(--color-kagit)" />
-        </g>
+      <span aria-hidden className="hedis-robot-aura" />
+      <span aria-hidden className="hedis-robot-halka" />
+      {/* bumpKey değişince bu katman yeniden kurulur ve konuşma sıçraması bir kez oynar */}
+      <span key={reduce ? undefined : bumpKey} className={`absolute inset-0 ${mood === "talking" ? "hedis-robot-konus" : ""}`}>
+        <span ref={tiltRef} className="absolute inset-0 transition-transform duration-200 ease-out">
+          <span className="hedis-robot-govde">
+            <span className="relative block size-full overflow-hidden rounded-full">
+              {FACES.map((f) => (
+                <Image
+                  key={f}
+                  src={`/hedis/${f}.webp`}
+                  alt=""
+                  fill
+                  sizes={rich ? "192px" : "128px"}
+                  draggable={false}
+                  className={`object-cover transition-[opacity,scale] duration-300 ${f === face ? "scale-100 opacity-100" : "scale-[0.97] opacity-0"}`}
+                />
+              ))}
+              <span aria-hidden className="hedis-robot-tarama" />
+            </span>
+          </span>
+        </span>
+      </span>
+      {rich && (
+        <>
+          <span aria-hidden className="hedis-robot-anten" />
+          <span aria-hidden className="hedis-robot-rozet">
+            {BADGE[face]}
+          </span>
+        </>
       )}
-
-      {/* ağız (kurdelenin üstünde) */}
-      {mood === "thinking" ? (
-        <path d="M54 95h12" stroke="var(--color-murekkep)" strokeWidth="3" strokeLinecap="round" />
-      ) : (
-        <path
-          d={mood === "happy" ? "M51 92q9 9 18 0" : "M53 93q7 5 14 0"}
-          fill={mood === "happy" ? "var(--color-murekkep)" : "none"}
-          stroke="var(--color-murekkep)"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
-
-      {/* kapak: sol alt köşeden menteşeli */}
-      <motion.g
-        style={{ transformOrigin: "16px 56px", transformBox: "view-box" }}
-        initial={false}
-        animate={lid}
-        transition={lidTransition}
-      >
-        <rect x="16" y="41" width="88" height="15" rx="2.5" fill="var(--color-kraft)" stroke="var(--color-murekkep)" strokeWidth="3" />
-        <rect x="55" y="41" width="10" height="15" fill="var(--color-kiremit)" />
-        {/* fiyonk */}
-        <g stroke="var(--color-murekkep)" strokeWidth="2.5" strokeLinejoin="round" fill="var(--color-kiremit)">
-          <path d="M60 41c-6-11-20-15-22-8-2 6 10 9 22 8Z" />
-          <path d="M60 41c6-11 20-15 22-8 2 6-10 9-22 8Z" />
-          <circle cx="60" cy="40" r="4" />
-        </g>
-      </motion.g>
-
-      {/* mutluyken kutudan yükselen küçük kalpler */}
       {mood === "happy" && !reduce && (
-        <motion.g initial={{ opacity: 0, y: 6 }} animate={{ opacity: [0, 1, 0], y: [6, -10, -18] }} transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 0.6 }}>
-          <path d="M70 34c0-3 4-4 5-1 1-3 5-2 5 1 0 3-5 6-5 6s-5-3-5-6Z" fill="var(--color-kiremit)" />
-          <path d="M46 30c0-2 3-3 3.6-.8.7-2.2 3.6-1.4 3.6.8 0 2.2-3.6 4.3-3.6 4.3S46 32.2 46 30Z" fill="var(--color-hardal)" />
-        </motion.g>
+        <span aria-hidden className="pointer-events-none absolute inset-0">
+          {["left-[8%] text-[#f472b6]", "left-[46%] text-[#fbbf24] [animation-delay:.35s]", "right-[6%] text-[#9b72cf] [animation-delay:.7s]"].map((pos) => (
+            <svg key={pos} viewBox="0 0 24 24" className={`hedis-robot-kalp absolute top-[18%] w-[18%] ${pos}`} fill="currentColor">
+              <path d="M12 21s-7.5-4.6-7.5-10.2C4.5 7.6 6.9 5.5 9.4 5.5c1.3 0 2.2.6 2.6 1.4.4-.8 1.3-1.4 2.6-1.4 2.5 0 4.9 2.1 4.9 5.3C19.5 16.4 12 21 12 21Z" />
+            </svg>
+          ))}
+        </span>
       )}
-    </motion.svg>
+    </span>
   );
 }
